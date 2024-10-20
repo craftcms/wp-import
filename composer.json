@@ -1,0 +1,68 @@
+{
+  "name": "craftcms/wp-import",
+  "description": "WordPress → Craft CMS content importer",
+  "type": "yii2-extension",
+  "keywords": [
+    "cms",
+    "craftcms",
+    "yii2"
+  ],
+  "homepage": "https://craftcms.com",
+  "license": "mit",
+  "authors": [
+    {
+      "name": "Pixel & Tonic",
+      "homepage": "https://pixelandtonic.com/"
+    }
+  ],
+  "support": {
+    "email": "support@craftcms.com",
+    "issues": "https://github.com/craftcms/wp-import/issues?state=open",
+    "source": "https://github.com/craftcms/wp-import",
+    "rss": "https://github.com/craftcms/wp-import/releases.atom"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": "^8.2",
+    "craftcms/cms": "^5.5.0-alpha",
+    "symfony/css-selector": "^6.0|^7.0",
+    "symfony/dom-crawler": "^6.0|^7.0"
+  },
+  "require-dev": {
+    "craftcms/ckeditor": "^4.2",
+    "craftcms/ecs": "dev-main",
+    "craftcms/phpstan": "dev-main",
+    "pestphp/pest": "^1.22",
+    "verbb/comments": "^3.0"
+  },
+  "repositories": [
+    {"type": "path", "url":  "../cms"}
+  ],
+  "autoload": {
+    "psr-4": {
+      "craft\\wpimport\\": "src/"
+    }
+  },
+  "extra": {
+    "bootstrap": "craft\\wpimport\\Extension"
+  },
+  "scripts": {
+    "check-cs": "ecs check --ansi",
+    "fix-cs": "ecs check --ansi --fix",
+    "codecept-build": "codecept build",
+    "phpstan": "phpstan --memory-limit=1G",
+    "test": "pest"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true,
+      "pestphp/pest-plugin": true
+    }
+  }
+}
