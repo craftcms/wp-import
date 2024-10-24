@@ -781,7 +781,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             function(EntryType $entryType) {
                 $entryType->icon = 'photo-film-music';
                 $entryType->color = ColorEnum::Amber;
-                $entryType->hasTitleField = false;
                 $entryType->showStatusField = false;
                 $entryType->showSlugField = false;
                 $entryType->setFieldLayout($this->fieldLayout([
@@ -819,6 +818,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 $entryType->showStatusField = false;
                 $entryType->showSlugField = false;
                 $entryType->setFieldLayout($this->fieldLayout([
+                    new EntryTitleField(),
                     new CustomField($this->linkUrlField, [
                         'handle' => 'buttonUrl',
                         'includeInCards' => true,
@@ -837,7 +837,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             function(EntryType $entryType) {
                 $entryType->icon = 'codepen';
                 $entryType->color = ColorEnum::Emerald;
-                $entryType->hasTitleField = false;
                 $entryType->showStatusField = false;
                 $entryType->showSlugField = false;
                 $entryType->setFieldLayout($this->fieldLayout([
@@ -860,7 +859,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             function(EntryType $entryType) {
                 $entryType->icon = 'youtube';
                 $entryType->color = ColorEnum::Red;
-                $entryType->hasTitleField = false;
                 $entryType->showStatusField = false;
                 $entryType->showSlugField = false;
                 $entryType->setFieldLayout($this->fieldLayout([
@@ -895,7 +893,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             function(EntryType $entryType) {
                 $entryType->icon = 'chevron-down';
                 $entryType->color = ColorEnum::Fuchsia;
-                $entryType->hasTitleField = false;
                 $entryType->showStatusField = false;
                 $entryType->showSlugField = false;
                 $entryType->setFieldLayout($this->fieldLayout([
@@ -922,7 +919,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             function(EntryType $entryType) {
                 $entryType->icon = 'layer-group';
                 $entryType->color = ColorEnum::Indigo;
-                $entryType->hasTitleField = false;
                 $entryType->showStatusField = false;
                 $entryType->showSlugField = false;
                 $entryType->setFieldLayout($this->fieldLayout([
