@@ -75,9 +75,9 @@ You’ll first need to install Craft 5.5, which is still in development. To do t
 Then run the following CLI commands:
 
 ```sh
-> composer update craftcms/cms -w
+> ddev composer update craftcms/cms -w
 > ddev craft up
-> composer require craftcms/wp-import --dev
+> ddev composer require craftcms/wp-import --dev
 ```
 
 > [!NOTE]
