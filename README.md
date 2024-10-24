@@ -76,7 +76,7 @@ Then run the following CLI commands:
 
 ```sh
 > composer update craftcms/cms -w
-> php craft up
+> ddev craft up
 > composer require craftcms/wp-import --dev
 ```
 
@@ -93,7 +93,7 @@ Then run the following CLI commands:
 Run the following CLI command to initiate the import:
 
 ```sh
-php craft wp-import
+ddev craft wp-import
 ```
 
 You’ll be prompted for your REST API URL, which should be something like `https://example.com/wp-json/wp/v2`. You’ll also need to provide the username and application password you wrote down earlier.
@@ -110,23 +110,23 @@ Then it will get busy with the import!
 You can import any new content by running the command again later on. Or import just certain posts (etc.) using the `--item-id` option:
 
 ```sh
-php craft wp-import/posts --item-id=123,789
+ddev craft wp-import/posts --item-id=123,789
 ```
 
 By default, any content that was already imported will be skipped. You can instead force content to be re-imported by passing the `--update` option.
 
 ```sh
-php craft wp-import/posts --item-id=123 --update
+ddev craft wp-import/posts --item-id=123 --update
 ```
 
 To see a full list of available commands, run:
 
 ```sh
-php craft wp-import --help
+ddev craft wp-import --help
 ```
 
 To see a full list of options for the `wp-imort/all` command (what `wp-import` is aliased to), run:
 
 ```sh
-php craft wp-import/all --help
+ddev craft wp-import/all --help
 ```
