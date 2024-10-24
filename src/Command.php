@@ -89,6 +89,7 @@ class Command extends Controller
     private const MEDIA_ENTRY_TYPE_UUID = 'd2356f61-430b-423e-a52e-a167fc52ba47';
     private const LINK_URL_FIELD_UUID = '22e94a09-0f7c-4a1f-9981-7fc0605d83fa';
     private const BUTTON_ENTRY_TYPE_UUID = 'fc8630bf-cc94-4830-8e52-40246afab5e5';
+    private const CODEPEN_ENTRY_TYPE_UUID = 'ff0c2e4b-8cfb-4e47-9216-751983be5496';
     private const VIDEO_ENTRY_TYPE_UUID = 'c34c148c-8e45-4867-b6c2-1ad69ba00f5e';
     private const SUMMARY_FIELD_UUID = 'dee725db-134a-40f3-bd54-199353365c57';
     private const DETAILS_ENTRY_TYPE_UUID = '354a145a-dc30-40c6-abe4-35c0fb93abeb';
@@ -209,6 +210,7 @@ class Command extends Controller
     public EntryType $mediaEntryType;
     public Link $linkUrlField;
     public EntryType $buttonEntryType;
+    public EntryType $codepenEntryType;
     public EntryType $videoEntryType;
     public PlainText $summaryField;
     public EntryType $detailsEntryType;
@@ -370,6 +372,7 @@ class Command extends Controller
                 $this->createMediaEntryType();
                 $this->createLinkUrlField();
                 $this->createButtonEntryType();
+                $this->createCodepenEntryType();
                 $this->createVideoEntryType();
                 $this->createSummaryField();
                 $this->createDetailsEntryType();
@@ -825,6 +828,29 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         );
     }
 
+    private function createCodepenEntryType(): void
+    {
+        $this->codepenEntryType = $this->entryType(
+            self::CODEPEN_ENTRY_TYPE_UUID,
+            'CodePen Embed',
+            'codepenEmbed',
+            function(EntryType $entryType) {
+                $entryType->icon = 'codepen';
+                $entryType->color = ColorEnum::Emerald;
+                $entryType->hasTitleField = false;
+                $entryType->showStatusField = false;
+                $entryType->showSlugField = false;
+                $entryType->setFieldLayout($this->fieldLayout([
+                    new CustomField($this->linkUrlField, [
+                        'label' => 'Pen URL',
+                        'handle' => 'penUrl',
+                        'includeInCards' => true,
+                    ]),
+                ]));
+            },
+        );
+    }
+
     private function createVideoEntryType(): void
     {
         $this->videoEntryType = $this->entryType(
@@ -958,6 +984,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 $field->setEntryTypes([
                     $this->mediaEntryType,
                     $this->buttonEntryType,
+                    $this->codepenEntryType,
                     $this->videoEntryType,
                     $this->detailsEntryType,
                     $this->groupEntryType,

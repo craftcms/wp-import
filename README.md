@@ -41,6 +41,7 @@ Supported block types:
 - `core-embed/twitter`
 - `core-embed/vimeo`
 - `core-embed/youtube`
+- `cp/codepen-gutenberg-embed-block`
 - `dsb/details-summary-block`
 - `jetpack/slideshow`
 - `jetpack/tiled-gallery`
