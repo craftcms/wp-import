@@ -33,7 +33,8 @@ add_action('rest_api_init', function() {
     register_rest_route('craftcms/v1', 'settings', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => fn() => [
-            'permalink_structure' => get_option('permalink_structure')
+            'permalink_structure' => get_option('permalink_structure'),
+            'color_palette' => wp_get_global_settings(['color', 'palette']),
         ],
     ]);
 });

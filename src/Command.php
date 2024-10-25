@@ -149,6 +149,7 @@ class Command extends Controller
     public bool $importComments;
 
     public Client $client;
+    public array $wpSettings;
     private array $idMap = [];
     private int $importTotal = 0;
 
@@ -446,8 +447,11 @@ MD) . "\n\n");
 
     private function captureApiInfo(): void
     {
-        if (!isset($this->apiUrl)) {
-            $this->apiUrl = $this->prompt('REST API URL:', [
+        if (isset($this->apiUrl)) {
+            $this->apiUrl = $this->normalizeApiUrl($this->apiUrl);
+            $this->wpSettings = $this->get("$this->apiUrl/craftcms/v1/settings");
+        } else {
+            $this->apiUrl = $this->normalizeApiUrl($this->prompt('REST API URL:', [
                 'required' => true,
                 'validator' => function($value, &$error) {
                     $value = $this->normalizeApiUrl($value);
@@ -456,7 +460,7 @@ MD) . "\n\n");
                     }
 
                     try {
-                        $this->get("$value/craftcms/v1/settings");
+                        $this->wpSettings = $this->get("$value/craftcms/v1/settings");
                     } catch (Throwable $e) {
                         if ($e instanceof ClientException && $e->getResponse()->getStatusCode() === 404) {
                             $error = $this->markdownToAnsi('The `wp-import Helper` WordPress plugin doesn’t appear to be installed.');
@@ -468,10 +472,8 @@ MD) . "\n\n");
 
                     return true;
                 },
-            ]);
+            ]));
         }
-
-        $this->apiUrl = $this->normalizeApiUrl($this->apiUrl);
 
         if (!isset($this->username) || !isset($this->password)) {
             getCredentials:
@@ -998,22 +1000,22 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
     public function normalizeColor(?string $color): ?string
     {
-        // todo: these values should be configurable
-        // or ideally, auto-discovered via the API somehow?? (theme.json)
-        return match ($color) {
-            'black' => '#000000',
-            'cyan-bluish-gray' => '#abb8c3',
-            'white' => '#ffffff',
-            'pale-pink' => '#f78da7',
-            'vivid-red' => '#cf2e2e',
-            'luminous-vivid-orange' => '#ff6900',
-            'luminous-vivid-amber' => '#fcb900',
-            'light-green-cyan' => '#7bdcb5',
-            'vivid-green-cyan' => '#00d084',
-            'pale-cyan-blue' => '#8ed1fc',
-            'vivid-cyan-blue' => '#0693e3',
-            'vivid-purple' => '#9b51e0',
-            default => (new ColorValidator())->validate($color) ? $color : null,
-        };
+        if (!$color) {
+            return null;
+        }
+
+        if ((new ColorValidator())->validate($color)) {
+            return $color;
+        }
+
+        foreach ($this->wpSettings['color_palette'] as $palette) {
+            foreach ($palette as $paletteColor) {
+                if ($paletteColor['slug'] === $color) {
+                    return $paletteColor['color'];
+                }
+            }
+        }
+
+        return null;
     }
 }
