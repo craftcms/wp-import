@@ -101,7 +101,7 @@ class Command extends Controller
     public ?string $password = null;
 
     /**
-     * @var int[]|null The item ID(s) to import
+     * @var int[] The item ID(s) to import
      */
     public array $itemId = [];
 
@@ -116,12 +116,12 @@ class Command extends Controller
     public int $perPage = 100;
 
     /**
-     * @var bool Whether to reimport items that have already been imported
+     * @var bool Reimport items that have already been imported
      */
     public bool $update = false;
 
     /**
-     * @var bool Whether to abort the import on the first error encountered
+     * @var bool Abort the import on the first error encountered
      */
     public bool $failFast = false;
 
