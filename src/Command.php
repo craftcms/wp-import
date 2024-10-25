@@ -814,8 +814,11 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             foreach ($body as $item) {
                 yield $item;
             }
+            if (empty($body) || isset($this->page)) {
+                break;
+            }
             $page++;
-        } while (!isset($this->page) && $page <= $response->getHeaderLine('X-WP-TotalPages'));
+        } while (true);
     }
 
     public function item(string $resource, int $id, array $queryParams = []): array
