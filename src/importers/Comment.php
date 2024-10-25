@@ -11,10 +11,14 @@ use Craft;
 use craft\base\ElementInterface;
 use craft\elements\User as UserElement;
 use craft\enums\CmsEdition;
+use craft\fieldlayoutelements\CustomField;
 use craft\helpers\DateTimeHelper;
+use craft\models\FieldLayoutTab;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\fields\WpId;
 use Throwable;
 use verbb\comments\elements\Comment as CommentElement;
+use verbb\comments\services\Comments as CommentsService;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -38,6 +42,27 @@ class Comment extends BaseImporter
             return false;
         }
         return true;
+    }
+
+    public function prep(): void
+    {
+        $fieldLayout = Craft::$app->fields->getLayoutByType(CommentElement::class);
+        $field = WpId::get();
+        if (!$fieldLayout->getFieldById($field->id)) {
+            $this->command->do('Updating the comment field layout', function() use ($fieldLayout, $field) {
+                $tabs = $fieldLayout->getTabs();
+                $tabs[] = new FieldLayoutTab([
+                    'name' => 'WordPress',
+                    'layout' => $fieldLayout,
+                    'elements' => [
+                        new CustomField($field),
+                    ],
+                ]);
+                $fieldLayout->setTabs($tabs);
+                $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
+                Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
+            });
+        }
     }
 
     public function populate(ElementInterface $element, array $data): void

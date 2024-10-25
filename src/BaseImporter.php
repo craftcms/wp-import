@@ -62,6 +62,13 @@ abstract class BaseImporter extends BaseObject
     }
 
     /**
+     * Prepares the system to import items of this type.
+     */
+    public function prep(): void
+    {
+    }
+
+    /**
      * Returns an existing element based on the given data, if there is one.
      *
      * @param array $data

@@ -11,45 +11,27 @@ use Craft;
 use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\base\FieldInterface;
-use craft\ckeditor\CkeConfig;
-use craft\ckeditor\Field as CkeditorField;
-use craft\ckeditor\Plugin as Ckeditor;
 use craft\console\Controller;
 use craft\elements\Entry;
 use craft\elements\User;
 use craft\enums\CmsEdition;
-use craft\enums\Color as ColorEnum;
 use craft\events\RegisterComponentTypesEvent;
-use craft\fieldlayoutelements\assets\AltField;
 use craft\fieldlayoutelements\CustomField;
-use craft\fieldlayoutelements\entries\EntryTitleField;
-use craft\fieldlayoutelements\HorizontalRule;
-use craft\fields\Assets as AssetsField;
-use craft\fields\Categories;
-use craft\fields\Color;
-use craft\fields\Dropdown;
-use craft\fields\Lightswitch;
-use craft\fields\Link;
-use craft\fields\linktypes\Url;
-use craft\fields\Number;
-use craft\fields\PlainText;
-use craft\fields\Tags;
-use craft\fs\Local;
 use craft\helpers\Console;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
 use craft\models\CategoryGroup;
-use craft\models\CategoryGroup_SiteSettings;
 use craft\models\EntryType;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\models\Section;
-use craft\models\Section_SiteSettings;
-use craft\models\Site;
 use craft\models\TagGroup;
-use craft\models\Volume;
 use craft\validators\ColorValidator;
+use craft\wpimport\generators\entrytypes\Details;
+use craft\wpimport\generators\entrytypes\Group;
+use craft\wpimport\generators\fields\PostContent;
+use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\importers\Category;
 use craft\wpimport\importers\Comment as CommentImporter;
 use craft\wpimport\importers\Media;
@@ -64,7 +46,6 @@ use Illuminate\Support\Collection;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 use verbb\comments\elements\Comment;
-use verbb\comments\fields\CommentsField;
 use verbb\comments\services\Comments as CommentsService;
 use yii\base\Action;
 use yii\base\InvalidArgumentException;
@@ -81,35 +62,6 @@ use yii\validators\UrlValidator;
  */
 class Command extends Controller
 {
-    private const WP_ID_FIELD_UUID = '4d06012a-2d8a-4e92-bf6b-de74bdd1be0b';
-    private const CAPTION_FIELD_UUID = '4c8edf71-ef0c-4ba3-ba4e-cf0ef5ac36ea';
-    private const DESCRIPTION_FIELD_UUID = 'b636e420-0741-4bd3-b8b2-89a8d50806f9';
-    private const MEDIA_VOLUME_UUID = 'ba83893c-c85d-4d01-81a2-0dfc8723fb5d';
-    private const MEDIA_FIELD_UUID = 'a553e2eb-f7c3-4f3e-a07e-27f4c94cec86';
-    private const MEDIA_ENTRY_TYPE_UUID = 'd2356f61-430b-423e-a52e-a167fc52ba47';
-    private const LINK_URL_FIELD_UUID = '22e94a09-0f7c-4a1f-9981-7fc0605d83fa';
-    private const BUTTON_ENTRY_TYPE_UUID = 'fc8630bf-cc94-4830-8e52-40246afab5e5';
-    private const CODEPEN_ENTRY_TYPE_UUID = 'ff0c2e4b-8cfb-4e47-9216-751983be5496';
-    private const VIDEO_ENTRY_TYPE_UUID = 'c34c148c-8e45-4867-b6c2-1ad69ba00f5e';
-    private const SUMMARY_FIELD_UUID = 'dee725db-134a-40f3-bd54-199353365c57';
-    private const DETAILS_ENTRY_TYPE_UUID = '354a145a-dc30-40c6-abe4-35c0fb93abeb';
-    private const COLOR_FIELD_UUID = 'ec2af108-def7-419e-b9fd-53f0d4289b0d';
-    private const GROUP_ENTRY_TYPE_UUID = '36ca6464-18ad-4f2a-9ae0-e8da4e00c94a';
-    private const CKE_CONFIG_UUID = '7261a233-a194-4374-8a55-91770cef7528';
-    private const POST_CONTENT_FIELD_UUID = 'e314b2cd-4ad3-4d8c-94d8-347ddb16245d';
-    private const CATEGORY_GROUP_UUID = '89d90c8f-05eb-4b35-970f-a1568dd6713b';
-    private const CATEGORIES_FIELD_UUID = '087a4919-1550-46cc-95e8-e492b43334ee';
-    private const TAG_GROUP_UUID = '677c2b2b-14a7-4692-8bb8-b4dc667e1a12';
-    private const TAGS_FIELD_UUID = '5a524179-b073-4ec2-a219-674143dbc455';
-    private const TEMPLATE_FIELD_UUID = '7e2aabf9-48f2-4671-b232-546499a18d43';
-    private const COMMENTS_FIELD_UUID = 'c23bcc94-9f9b-42ae-aca6-b5afb8be5e86';
-    private const FORMAT_FIELD_UUID = 'd958a069-fc64-431a-91bc-3141612304be';
-    private const STICKY_FIELD_UUID = '79559275-ab81-4420-abf1-1c848a0a68d6';
-    private const POST_ENTRY_TYPE_UUID = 'b701559d-352a-4a55-80af-30d65b624292';
-    private const POSTS_SECTION_UUID = '3358a830-9ada-487d-a170-01751e921710';
-    private const PAGE_ENTRY_TYPE_UUID = '9ca3795a-ec88-4bec-a4e0-9839113a6c48';
-    private const PAGES_SECTION_UUID = 'b5e87e4c-f83a-40a6-bf98-9db86b6383fb';
-
     /**
      * @event RegisterComponentTypesEvent The event that is triggered when registering block transformers.
      *
@@ -132,11 +84,6 @@ class Command extends Controller
      * ```
      */
     public const EVENT_REGISTER_BLOCK_TRANSFORMERS = 'registerBlockTransformers';
-
-    /**
-     * @event Event The event that is triggered when preparing for an import.
-     */
-    public const EVENT_PREP = 'prep';
 
     /**
      * @inheritdoc
@@ -179,11 +126,6 @@ class Command extends Controller
     public bool $update = false;
 
     /**
-     * @var bool Whether to prep the system for import.
-     */
-    public bool $prep = true;
-
-    /**
      * @var bool Whether to abort the import on the first error encountered
      */
     public bool $failFast = false;
@@ -201,37 +143,6 @@ class Command extends Controller
     public Client $client;
     private array $idMap = [];
 
-    public Number $wpIdField;
-    public PlainText $captionField;
-    public PlainText $descriptionField;
-    public Local $mediaFs;
-    public Volume $mediaVolume;
-    public AssetsField $mediaField;
-    public EntryType $mediaEntryType;
-    public Link $linkUrlField;
-    public EntryType $buttonEntryType;
-    public EntryType $codepenEntryType;
-    public EntryType $videoEntryType;
-    public PlainText $summaryField;
-    public EntryType $detailsEntryType;
-    public Color $colorField;
-    public EntryType $groupEntryType;
-    public CkeditorField $postContentField;
-    public CategoryGroup $categoryGroup;
-    public Categories $categoriesField;
-    public TagGroup $tagGroup;
-    public Tags $tagsField;
-    public PlainText $templateField;
-    public CommentsField $commentsField;
-    public Dropdown $formatField;
-    public Lightswitch $stickyField;
-    public EntryType $postEntryType;
-    public Section $postsSection;
-    public EntryType $pageEntryType;
-    public Section $pagesSection;
-
-    public array $userIds = [];
-
     public function init(): void
     {
         $this->loadImporters();
@@ -248,7 +159,6 @@ class Command extends Controller
             'page',
             'perPage',
             'update',
-            'prep',
             'failFast',
         ]);
 
@@ -318,8 +228,6 @@ class Command extends Controller
             $this->stdout("\n");
         }
 
-        $this->prep();
-
         foreach ($resources as $resource) {
             $this->runAction($resource, [
                 'apiUrl' => $this->apiUrl,
@@ -329,7 +237,6 @@ class Command extends Controller
                 'perPage' => $this->perPage,
                 'update' => $this->update,
                 'failFast' => $this->failFast,
-                'prep' => false,
                 'interactive' => false,
             ]);
         }
@@ -352,58 +259,6 @@ class Command extends Controller
         }
 
         return $actions;
-    }
-
-    public function prep(): void
-    {
-        if (!$this->prep) {
-            return;
-        }
-
-        $this->do('Preparing content model', function() {
-            Console::indent();
-            try {
-                $this->createWpIdField();
-                $this->createCaptionField();
-                $this->createDescriptionField();
-                $this->createMediaFs();
-                $this->createMediaVolume();
-                $this->createMediaField();
-                $this->createMediaEntryType();
-                $this->createLinkUrlField();
-                $this->createButtonEntryType();
-                $this->createCodepenEntryType();
-                $this->createVideoEntryType();
-                $this->createSummaryField();
-                $this->createDetailsEntryType();
-                $this->createColorField();
-                $this->createGroupEntryType();
-                $this->createCkeConfig();
-                $this->createPostContentField();
-                $this->createCategoryGroup();
-                $this->createCategoriesField();
-                $this->createTagGroup();
-                $this->createTagsField();
-                $this->createTemplateField();
-                $this->createCommentsField();
-                $this->createFormatField();
-                $this->createStickyField();
-                $this->createPostEntryType();
-                $this->createPostsSection();
-                $this->createPageEntryType();
-                $this->createPagesSection();
-                $this->updateUserLayout();
-                $this->updateCommentLayout();
-
-                // assign the Content field to the Group and Details entry types, now that they all exist
-                $this->assignFieldToEntryType($this->postContentField, $this->groupEntryType);
-                $this->assignFieldToEntryType($this->postContentField, $this->detailsEntryType);
-
-                $this->trigger(self::EVENT_PREP);
-            } finally {
-                Console::outdent();
-            }
-        });
     }
 
     public function renderBlocks(array $blocks, Entry $entry): string
@@ -648,718 +503,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         });
     }
 
-    private function createWpIdField(): void
-    {
-        $this->wpIdField = $this->field(
-            self::WP_ID_FIELD_UUID,
-            'WordPress ID',
-            'wpId',
-            Number::class, function(Number $field) {
-                $field->min = 1;
-                $field->searchable = true;
-            },
-        );
-    }
-
-    private function createCaptionField(): void
-    {
-        $this->captionField = $this->field(
-            self::CAPTION_FIELD_UUID,
-            'Caption',
-            'caption',
-            PlainText::class,
-            function(PlainText $field) {
-                $field->multiline = true;
-                $field->searchable = true;
-            }
-        );
-    }
-
-    private function createDescriptionField(): void
-    {
-        $this->descriptionField = $this->field(
-            self::DESCRIPTION_FIELD_UUID,
-            'Description',
-            'description',
-            PlainText::class,
-            function(PlainText $field) {
-                $field->code = true;
-                $field->multiline = true;
-                $field->searchable = true;
-            },
-        );
-    }
-
-    private function createMediaFs(): void
-    {
-        $this->do('Creating `Uploads` filesystem', function() {
-            $fs = Craft::$app->fs->getFilesystemByHandle('uploads');
-            if ($fs) {
-                if (!$fs instanceof Local) {
-                    throw new Exception(sprintf('Filesystem “%s” is no longer a Local filesystem.', $fs->name));
-                }
-                $this->mediaFs = $fs;
-                return;
-            }
-
-            $this->mediaFs = new Local();
-            $this->mediaFs->name = 'Uploads';
-            $this->mediaFs->handle = 'uploads';
-            $this->mediaFs->path = '@webroot/uploads';
-            $this->mediaFs->hasUrls = true;
-            $this->mediaFs->url = '/uploads';
-
-            if (!Craft::$app->fs->saveFilesystem($this->mediaFs)) {
-                throw new Exception(implode(', ', $this->mediaFs->getFirstErrors()));
-            }
-        });
-    }
-
-    private function createMediaVolume(): void
-    {
-        $this->do('Creating `Uploads` volume', function() {
-            $volume = Craft::$app->volumes->getVolumeByUid(self::MEDIA_VOLUME_UUID);
-            if ($volume) {
-                $this->mediaVolume = $volume;
-                return;
-            }
-
-            $fieldLayout = new FieldLayout();
-            $fieldLayout->setTabs([
-                new FieldLayoutTab([
-                    'layout' => $fieldLayout,
-                    'name' => 'Content',
-                    'elements' => [
-                        new AltField(),
-                        new CustomField($this->captionField),
-                        new CustomField($this->descriptionField),
-                    ],
-                ]),
-                new FieldLayoutTab([
-                    'layout' => $fieldLayout,
-                    'name' => 'WordPress',
-                    'elements' => [
-                        new CustomField($this->wpIdField),
-                    ],
-                ]),
-            ]);
-
-            $this->mediaVolume = new Volume();
-            $this->mediaVolume->uid = self::MEDIA_VOLUME_UUID;
-            $this->mediaVolume->name = 'Uploads';
-            $this->mediaVolume->handle = 'uploads';
-            $this->mediaVolume->setFsHandle('uploads');
-            $this->mediaVolume->setFieldLayout($fieldLayout);
-
-            if (!Craft::$app->volumes->saveVolume($this->mediaVolume)) {
-                throw new Exception(implode(', ', $this->mediaVolume->getFirstErrors()));
-            }
-        });
-    }
-
-    private function createMediaField(): void
-    {
-        $this->mediaField = $this->field(
-            self::MEDIA_FIELD_UUID,
-            'Media',
-            'media',
-            AssetsField::class,
-            function(AssetsField $field) {
-                $field->sources = ["volume:{$this->mediaVolume->uid}"];
-                $field->viewMode = 'large';
-                $field->defaultUploadLocationSource = "volume:{$this->mediaVolume->uid}";
-            },
-        );
-    }
-
-    private function createMediaEntryType(): void
-    {
-        $this->mediaEntryType = $this->entryType(
-            self::MEDIA_ENTRY_TYPE_UUID,
-            'Media',
-            'media',
-            function(EntryType $entryType) {
-                $entryType->icon = 'photo-film-music';
-                $entryType->color = ColorEnum::Amber;
-                $entryType->showStatusField = false;
-                $entryType->showSlugField = false;
-                $entryType->setFieldLayout($this->fieldLayout([
-                    new CustomField($this->mediaField, [
-                        'providesThumbs' => true,
-                        'includeInCards' => true,
-                    ]),
-                ]));
-            },
-        );
-    }
-
-    private function createLinkUrlField(): void
-    {
-        $this->linkUrlField = $this->field(
-            self::LINK_URL_FIELD_UUID,
-            'Link URL',
-            'linkUrl',
-            Link::class,
-            function(Link $link) {
-                $link->types = [Url::id()];
-            },
-        );
-    }
-
-    private function createButtonEntryType(): void
-    {
-        $this->buttonEntryType = $this->entryType(
-            self::BUTTON_ENTRY_TYPE_UUID,
-            'Button',
-            'button',
-            function(EntryType $entryType) {
-                $entryType->icon = 'link';
-                $entryType->color = ColorEnum::Cyan;
-                $entryType->showStatusField = false;
-                $entryType->showSlugField = false;
-                $entryType->setFieldLayout($this->fieldLayout([
-                    new EntryTitleField(),
-                    new CustomField($this->linkUrlField, [
-                        'handle' => 'buttonUrl',
-                        'includeInCards' => true,
-                    ]),
-                ]));
-            },
-        );
-    }
-
-    private function createCodepenEntryType(): void
-    {
-        $this->codepenEntryType = $this->entryType(
-            self::CODEPEN_ENTRY_TYPE_UUID,
-            'CodePen Embed',
-            'codepenEmbed',
-            function(EntryType $entryType) {
-                $entryType->icon = 'codepen';
-                $entryType->color = ColorEnum::Emerald;
-                $entryType->showStatusField = false;
-                $entryType->showSlugField = false;
-                $entryType->setFieldLayout($this->fieldLayout([
-                    new CustomField($this->linkUrlField, [
-                        'label' => 'Pen URL',
-                        'handle' => 'penUrl',
-                        'includeInCards' => true,
-                    ]),
-                ]));
-            },
-        );
-    }
-
-    private function createVideoEntryType(): void
-    {
-        $this->videoEntryType = $this->entryType(
-            self::VIDEO_ENTRY_TYPE_UUID,
-            'Video',
-            'video',
-            function(EntryType $entryType) {
-                $entryType->icon = 'youtube';
-                $entryType->color = ColorEnum::Red;
-                $entryType->showStatusField = false;
-                $entryType->showSlugField = false;
-                $entryType->setFieldLayout($this->fieldLayout([
-                    new CustomField($this->linkUrlField, [
-                        'handle' => 'videoUrl',
-                        'includeInCards' => true,
-                    ]),
-                ]));
-            },
-        );
-    }
-
-    private function createSummaryField(): void
-    {
-        $this->summaryField = $this->field(
-            self::SUMMARY_FIELD_UUID,
-            'Summary',
-            'summary',
-            PlainText::class,
-            function(PlainText $field) {
-                $field->searchable = true;
-            },
-        );
-    }
-
-    private function createDetailsEntryType(): void
-    {
-        $this->detailsEntryType = $this->entryType(
-            self::DETAILS_ENTRY_TYPE_UUID,
-            'Details',
-            'details',
-            function(EntryType $entryType) {
-                $entryType->icon = 'chevron-down';
-                $entryType->color = ColorEnum::Fuchsia;
-                $entryType->showStatusField = false;
-                $entryType->showSlugField = false;
-                $entryType->setFieldLayout($this->fieldLayout([
-                    new CustomField($this->summaryField, [
-                        'includeInCards' => true,
-                    ]),
-                    // add the CKE field once it's created...
-                ]));
-            },
-        );
-    }
-
-    private function createColorField(): void
-    {
-        $this->colorField = $this->field(self::COLOR_FIELD_UUID, 'Color', 'color', Color::class);
-    }
-
-    private function createGroupEntryType(): void
-    {
-        $this->groupEntryType = $this->entryType(
-            self::GROUP_ENTRY_TYPE_UUID,
-            'Group',
-            'group',
-            function(EntryType $entryType) {
-                $entryType->icon = 'layer-group';
-                $entryType->color = ColorEnum::Indigo;
-                $entryType->showStatusField = false;
-                $entryType->showSlugField = false;
-                $entryType->setFieldLayout($this->fieldLayout([
-                    new CustomField($this->colorField, [
-                        'label' => 'Background Color',
-                        'handle' => 'backgroundColor',
-                    ]),
-                    new CustomField($this->colorField, [
-                        'label' => 'Text Color',
-                        'handle' => 'textColor',
-                    ]),
-                    // add the CKE field once it's created...
-                ]));
-            },
-        );
-    }
-
-    private function createCkeConfig(): void
-    {
-        $this->do('Creating `Content` CKEditor config', function() {
-            $configService = Ckeditor::getInstance()->getCkeConfigs();
-            try {
-                $config = $configService->getByUid(self::CKE_CONFIG_UUID);
-            } catch (InvalidArgumentException) {
-                $config = null;
-            }
-
-            if ($config) {
-                return;
-            }
-
-            $config = new CkeConfig();
-            $config->name = 'Post Content';
-            $config->uid = self::CKE_CONFIG_UUID;
-            $config->toolbar = [
-                'heading', '|',
-                'bold', 'italic', 'link', '|',
-                'blockQuote', 'bulletedList', 'numberedList', 'codeBlock', '|',
-                'insertTable', 'mediaEmbed', 'htmlEmbed', 'pageBreak', '|',
-                'createEntry', 'sourceEditing',
-            ];
-
-            if (!$configService->save($config)) {
-                throw new Exception(implode(', ', $config->getFirstErrors()));
-            }
-        });
-    }
-
-    private function createPostContentField(): void
-    {
-        $this->postContentField = $this->field(
-            self::POST_CONTENT_FIELD_UUID,
-            'Post Content',
-            'postContent',
-            CkeditorField::class,
-            function(CkeditorField $field) {
-                $field->ckeConfig = self::CKE_CONFIG_UUID;
-                $field->purifyHtml = false; // todo: allow video embeds in purifier config
-                $field->setEntryTypes([
-                    $this->mediaEntryType,
-                    $this->buttonEntryType,
-                    $this->codepenEntryType,
-                    $this->videoEntryType,
-                    $this->detailsEntryType,
-                    $this->groupEntryType,
-                ]);
-                $field->searchable = true;
-            },
-        );
-    }
-
-    private function createCategoryGroup(): void
-    {
-        $this->categoryGroup = $this->categoryGroup(
-            self::CATEGORY_GROUP_UUID,
-            'Categories',
-            'categories',
-            function(CategoryGroup $categoryGroup) {
-                $fieldLayout = new FieldLayout();
-                $fieldLayout->setTabs([
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'WordPress',
-                        'elements' => [
-                            new CustomField($this->wpIdField),
-                        ],
-                    ]),
-                ]);
-
-                $categoryGroup->setSiteSettings(array_map(fn(Site $site) => new CategoryGroup_SiteSettings([
-                    'siteId' => $site->id,
-                ]), Craft::$app->sites->getAllSites(true)));
-                $categoryGroup->setFieldLayout($fieldLayout);
-            },
-        );
-    }
-
-    private function createCategoriesField(): void
-    {
-        $this->categoriesField = $this->field(
-            self::CATEGORIES_FIELD_UUID,
-            'Categories',
-            'categories',
-            Categories::class,
-            function(Categories $field) {
-                $field->source = "group:{$this->categoryGroup->uid}";
-            },
-        );
-    }
-
-    private function createTagGroup(): void
-    {
-        $this->tagGroup = $this->tagGroup(
-            self::TAG_GROUP_UUID,
-            'Tags',
-            'tags',
-            function(TagGroup $tagGroup) {
-                $fieldLayout = new FieldLayout();
-                $fieldLayout->setTabs([
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'WordPress',
-                        'elements' => [
-                            new CustomField($this->wpIdField),
-                        ],
-                    ]),
-                ]);
-                $tagGroup->setFieldLayout($fieldLayout);
-            },
-        );
-    }
-
-    private function createTagsField(): void
-    {
-        $this->tagsField = $this->field(
-            self::TAGS_FIELD_UUID,
-            'Tags',
-            'tags',
-            Tags::class,
-            function(Tags $field) {
-                $field->source = "taggroup:{$this->tagGroup->uid}";
-            },
-        );
-    }
-
-    private function createTemplateField(): void
-    {
-        $this->templateField = $this->field(
-            self::TEMPLATE_FIELD_UUID,
-            'Template',
-            'template',
-            PlainText::class,
-            function(PlainText $field) {
-                $field->code = true;
-            },
-        );
-    }
-
-    private function createCommentsField(): void
-    {
-        if (!$this->importComments) {
-            return;
-        }
-
-        $this->commentsField = $this->field(
-            self::COMMENTS_FIELD_UUID,
-            'Comment Options',
-            'commentOptions',
-            CommentsField::class,
-        );
-    }
-
-    private function createFormatField(): void
-    {
-        $this->formatField = $this->field(
-            self::FORMAT_FIELD_UUID,
-            'Format',
-            'format',
-            Dropdown::class,
-            function(Dropdown $field) {
-                $field->options = [
-                    ['label' => 'Standard', 'value' => 'standard', 'default' => true],
-                    ['label' => 'Aside', 'value' => 'aside'],
-                    ['label' => 'Audio', 'value' => 'audio'],
-                    ['label' => 'Chat', 'value' => 'chat'],
-                    ['label' => 'Gallery', 'value' => 'gallery'],
-                    ['label' => 'Image', 'value' => 'image'],
-                    ['label' => 'Link', 'value' => 'link'],
-                    ['label' => 'Quote', 'value' => 'quote'],
-                    ['label' => 'Status', 'value' => 'status'],
-                    ['label' => 'Video', 'value' => 'video'],
-                ];
-            },
-        );
-    }
-
-    private function createStickyField(): void
-    {
-        $this->stickyField = $this->field(
-            self::STICKY_FIELD_UUID,
-            'Sticky',
-            'sticky',
-            Lightswitch::class,
-        );
-    }
-
-    private function createPostEntryType(): void
-    {
-        $this->postEntryType = $this->entryType(
-            self::POST_ENTRY_TYPE_UUID,
-            'Post',
-            'post',
-            function(EntryType $entryType) {
-                $entryType->icon = 'pen-nib';
-                $entryType->color = ColorEnum::Blue;
-                $fieldLayout = new FieldLayout();
-                $fieldLayout->setTabs([
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'Content',
-                        'elements' => [
-                            new EntryTitleField([
-                                'required' => false,
-                            ]),
-                            new CustomField($this->postContentField),
-                        ],
-                    ]),
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'Cover Photo',
-                        'elements' => [
-                            new CustomField($this->descriptionField, [
-                                'label' => 'Cover Text',
-                                'handle' => 'coverText',
-                            ]),
-                            new CustomField($this->mediaField, [
-                                'label' => 'Cover Photo',
-                                'handle' => 'coverPhoto',
-                            ]),
-                            new CustomField($this->colorField, [
-                                'label' => 'Cover Overlay Color',
-                                'handle' => 'coverOverlayColor',
-                            ]),
-                        ],
-                    ]),
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'Meta',
-                        'elements' => array_filter([
-                            new CustomField($this->mediaField, [
-                                'label' => 'Featured Image',
-                                'handle' => 'featuredImage',
-                            ]),
-                            new Customfield($this->captionField, [
-                                'label' => 'Excerpt',
-                                'handle' => 'excerpt',
-                            ]),
-                            new HorizontalRule(),
-                            $this->importComments ? new CustomField($this->commentsField) : null,
-                            new CustomField($this->formatField),
-                            new CustomField($this->stickyField),
-                            new HorizontalRule(),
-                            new CustomField($this->categoriesField),
-                            new CustomField($this->tagsField),
-                        ]),
-                    ]),
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'WordPress',
-                        'elements' => [
-                            new CustomField($this->wpIdField),
-                        ],
-                    ]),
-                ]);
-                $entryType->setFieldLayout($fieldLayout);
-            },
-        );
-    }
-
-    private function createPostsSection(): void
-    {
-        $this->postsSection = $this->section(
-            self::POSTS_SECTION_UUID,
-            'Posts',
-            'posts',
-            function(Section $section) {
-                $section->type = Section::TYPE_CHANNEL;
-                $section->setEntryTypes([$this->postEntryType]);
-                $section->setSiteSettings([
-                    new Section_SiteSettings([
-                        'siteId' => Craft::$app->sites->getPrimarySite()->id,
-                        'uriFormat' => '{slug}',
-                    ]),
-                ]);
-                $section->previewTargets = [
-                    [
-                        'label' => Craft::t('app', 'Primary {type} page', [
-                            'type' => Entry::lowerDisplayName(),
-                        ]),
-                        'urlFormat' => '{url}',
-                    ],
-                ];
-            },
-        );
-    }
-
-    private function createPageEntryType(): void
-    {
-        $this->pageEntryType = $this->entryType(
-            self::PAGE_ENTRY_TYPE_UUID,
-            'Page',
-            'page',
-            function(EntryType $entryType) {
-                $entryType->icon = 'page';
-                $entryType->color = ColorEnum::Blue;
-                $fieldLayout = new FieldLayout();
-                $fieldLayout->setTabs([
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'Content',
-                        'elements' => [
-                            new EntryTitleField([
-                                'required' => false,
-                            ]),
-                            new CustomField($this->postContentField),
-                        ],
-                    ]),
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'Cover Photo',
-                        'elements' => [
-                            new CustomField($this->descriptionField, [
-                                'label' => 'Cover Text',
-                                'handle' => 'coverText',
-                            ]),
-                            new CustomField($this->mediaField, [
-                                'label' => 'Cover Photo',
-                                'handle' => 'coverPhoto',
-                            ]),
-                            new CustomField($this->colorField, [
-                                'label' => 'Cover Overlay Color',
-                                'handle' => 'coverOverlayColor',
-                            ]),
-                        ],
-                    ]),
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'Meta',
-                        'elements' => array_filter([
-                            new CustomField($this->mediaField, [
-                                'label' => 'Featured Image',
-                                'handle' => 'featuredImage',
-                            ]),
-                            new HorizontalRule(),
-                            $this->importComments ? new CustomField($this->commentsField) : null,
-                        ]),
-                    ]),
-                    new FieldLayoutTab([
-                        'layout' => $fieldLayout,
-                        'name' => 'WordPress',
-                        'elements' => [
-                            new CustomField($this->wpIdField),
-                            new CustomField($this->templateField),
-                        ],
-                    ]),
-                ]);
-                $entryType->setFieldLayout($fieldLayout);
-            },
-        );
-    }
-
-    private function createPagesSection(): void
-    {
-        $this->pagesSection = $this->section(
-            self::PAGES_SECTION_UUID,
-            'Pages',
-            'pages',
-            function(Section $section) {
-                $section->type = Section::TYPE_STRUCTURE;
-                $section->setEntryTypes([$this->pageEntryType]);
-                $section->setSiteSettings([
-                    new Section_SiteSettings([
-                        'siteId' => Craft::$app->sites->getPrimarySite()->id,
-                        'uriFormat' => '{slug}',
-                    ]),
-                ]);
-                $section->previewTargets = [
-                    [
-                        'label' => Craft::t('app', 'Primary {type} page', [
-                            'type' => Entry::lowerDisplayName(),
-                        ]),
-                        'urlFormat' => '{url}',
-                    ],
-                ];
-            },
-        );
-    }
-
-    private function updateUserLayout(): void
-    {
-        $fieldLayout = Craft::$app->fields->getLayoutByType(User::class);
-        if (!$fieldLayout->getFieldById($this->wpIdField->id)) {
-            $this->do('Updating the user field layout', function() use ($fieldLayout) {
-                $tabs = $fieldLayout->getTabs();
-                $tabs[] = new FieldLayoutTab([
-                    'name' => 'WordPress',
-                    'layout' => $fieldLayout,
-                    'elements' => [
-                        new CustomField($this->wpIdField),
-                    ],
-                ]);
-                $fieldLayout->setTabs($tabs);
-                Craft::$app->users->saveLayout($fieldLayout);
-            });
-        }
-    }
-
-    private function updateCommentLayout(): void
-    {
-        if (!$this->importComments) {
-            return;
-        }
-
-        $fieldLayout = Craft::$app->fields->getLayoutByType(Comment::class);
-        if (!$fieldLayout->getFieldById($this->wpIdField->id)) {
-            $this->do('Updating the comment field layout', function() use ($fieldLayout) {
-                $tabs = $fieldLayout->getTabs();
-                $tabs[] = new FieldLayoutTab([
-                    'name' => 'WordPress',
-                    'layout' => $fieldLayout,
-                    'elements' => [
-                        new CustomField($this->wpIdField),
-                    ],
-                ]);
-                $fieldLayout->setTabs($tabs);
-                $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
-                Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
-            });
-        }
-    }
-
     /**
      * @template T of FieldInterface
      * @param string $uid
@@ -1589,11 +732,17 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             return $this->idMap[$resource][$id];
         }
 
+        // If this is the first time we've imported an item of this type,
+        // give the importer a chance to prep the system for it
+        if (!isset($this->idMap[$resource])) {
+            $importer->prep();
+        }
+
         // Already exists?
         /** @var string|ElementInterface $elementType */
         $elementType = $importer::elementType();
         $element = $elementType::find()
-            ->{$this->wpIdField->handle}($id)
+            ->{WpId::get()->handle}($id)
             ->status(null)
             ->limit(1)
             ->one();
@@ -1622,7 +771,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
                 $element ??= $importer->find($data) ?? new $elementType();
                 $importer->populate($element, $data);
-                $element->{$this->wpIdField->handle} = $id;
+                $element->{WpId::get()->handle} = $id;
 
                 if ($element->getScenario() === Model::SCENARIO_DEFAULT) {
                     $element->setScenario(Element::SCENARIO_ESSENTIALS);
@@ -1704,16 +853,15 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
         try {
             return Json::decode($body);
-        } catch (InvalidArgumentException) {
+        } catch (InvalidArgumentException $e) {
             // Skip any PHP warnings at the top
-            $dPos = Collection::make(['[', '{'])
-                ->map(fn(string $d) => strpos($body, $d))
-                ->filter(fn($pos) => $pos !== false)
-                ->min();
-            if ($dPos) {
-                $body = substr($body, $dPos);
+            if (
+                !preg_match('/^[\[{]/m', $body, $matches, PREG_OFFSET_CAPTURE) ||
+                $matches[0][1] === 0
+            ) {
+                throw $e;
             }
-            return Json::decode($body);
+            return Json::decode(substr($body, $matches[0][1]));
         }
     }
 

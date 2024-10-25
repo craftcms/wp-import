@@ -36,10 +36,6 @@ class ImportAction extends Action
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        if ($this->controller->prep) {
-            $this->controller->prep();
-        }
-
         if (!empty($this->controller->itemId)) {
             foreach ($this->controller->itemId as $id) {
                 $this->controller->import($this->resource, $id);

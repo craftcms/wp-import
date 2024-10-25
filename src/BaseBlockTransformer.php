@@ -10,6 +10,7 @@ namespace craft\wpimport;
 use Craft;
 use craft\base\Element;
 use craft\elements\Entry;
+use craft\wpimport\generators\fields\PostContent;
 use yii\base\BaseObject;
 use yii\console\Exception;
 
@@ -52,7 +53,7 @@ abstract class BaseBlockTransformer extends BaseObject
     protected function createNestedEntry(Entry $entry, callable $populate): string
     {
         $nestedEntry = new Entry();
-        $nestedEntry->fieldId = $this->command->postContentField->id;
+        $nestedEntry->fieldId = PostContent::get()->id;
         $nestedEntry->ownerId = $entry->id;
         $populate($nestedEntry);
         $this->saveNestedEntry($nestedEntry);

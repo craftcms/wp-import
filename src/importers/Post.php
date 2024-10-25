@@ -15,6 +15,14 @@ use craft\elements\User as UserElement;
 use craft\enums\CmsEdition;
 use craft\helpers\DateTimeHelper;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\entrytypes\Post as PostEntryType;
+use craft\wpimport\generators\fields\Categories;
+use craft\wpimport\generators\fields\Comments;
+use craft\wpimport\generators\fields\Format;
+use craft\wpimport\generators\fields\PostContent;
+use craft\wpimport\generators\fields\Sticky;
+use craft\wpimport\generators\fields\Tags;
+use craft\wpimport\generators\sections\Posts;
 use yii\console\Exception;
 
 /**
@@ -42,8 +50,8 @@ class Post extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var Entry $element */
-        $element->sectionId = $this->command->postsSection->id;
-        $element->setTypeId($this->command->postEntryType->id);
+        $element->sectionId = Posts::get()->id;
+        $element->setTypeId(PostEntryType::get()->id);
 
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
@@ -63,14 +71,14 @@ class Post extends BaseImporter
 
         $element->setFieldValues([
             'excerpt' => $data['excerpt']['raw'],
-            $this->command->formatField->handle => $data['format'],
-            $this->command->stickyField->handle => $data['sticky'],
-            $this->command->categoriesField->handle => array_map(fn(int $id) => $this->command->import(Category::resource(), $id), $data['categories']),
-            $this->command->tagsField->handle => array_map(fn(int $id) => $this->command->import(Tag::resource(), $id), $data['tags']),
+            Format::get()->handle => $data['format'],
+            Sticky::get()->handle => $data['sticky'],
+            Categories::get()->handle => array_map(fn(int $id) => $this->command->import(Category::resource(), $id), $data['categories']),
+            Tags::get()->handle => array_map(fn(int $id) => $this->command->import(Tag::resource(), $id), $data['tags']),
         ]);
 
         if ($this->command->importComments) {
-            $element->setFieldValue($this->command->commentsField->handle, [
+            $element->setFieldValue(Comments::get()->handle, [
                 'commentEnabled' => $data['comment_status'] === 'open',
             ]);
         }
@@ -83,6 +91,6 @@ class Post extends BaseImporter
         }
 
         // render the blocks afterward, in case we need the ID
-        $element->setFieldValue($this->command->postContentField->handle, $this->command->renderBlocks($data['content_parsed'], $element));
+        $element->setFieldValue(PostContent::get()->handle, $this->command->renderBlocks($data['content_parsed'], $element));
     }
 }

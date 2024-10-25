@@ -11,8 +11,11 @@ use Craft;
 use craft\base\ElementInterface;
 use craft\elements\User as UserElement;
 use craft\enums\CmsEdition;
+use craft\fieldlayoutelements\CustomField;
 use craft\helpers\StringHelper;
+use craft\models\FieldLayoutTab;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\fields\WpId;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -43,6 +46,26 @@ class User extends BaseImporter
             return false;
         }
         return true;
+    }
+
+    public function prep(): void
+    {
+        $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
+        $field = WpId::get();
+        if (!$fieldLayout->getFieldById($field->id)) {
+            $this->command->do('Updating the user field layout', function() use ($fieldLayout, $field) {
+                $tabs = $fieldLayout->getTabs();
+                $tabs[] = new FieldLayoutTab([
+                    'name' => 'WordPress',
+                    'layout' => $fieldLayout,
+                    'elements' => [
+                        new CustomField($field),
+                    ],
+                ]);
+                $fieldLayout->setTabs($tabs);
+                Craft::$app->users->saveLayout($fieldLayout);
+            });
+        }
     }
 
     public function find(array $data): ?ElementInterface

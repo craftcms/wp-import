@@ -9,6 +9,7 @@ namespace craft\wpimport\blocktransformers;
 
 use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
+use craft\wpimport\generators\entrytypes\Button as ButtonEntryType;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -31,7 +32,7 @@ class Button extends BaseBlockTransformer
         $url = $nodes->first()->attr('href');
 
         return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($label, $url) {
-            $nestedEntry->setTypeId($this->command->buttonEntryType->id);
+            $nestedEntry->setTypeId(ButtonEntryType::get()->id);
             $nestedEntry->title = $label;
             $nestedEntry->setFieldValue('buttonUrl', $url);
         });

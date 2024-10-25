@@ -9,6 +9,7 @@ namespace craft\wpimport\blocktransformers;
 
 use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
+use craft\wpimport\generators\entrytypes\Post;
 use craft\wpimport\importers\Media;
 use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
@@ -25,7 +26,7 @@ class Cover extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        if ($entry->getTypeId() !== $this->command->postEntryType->id) {
+        if ($entry->getTypeId() !== Post::get()->id) {
             return '';
         }
 

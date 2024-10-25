@@ -10,6 +10,7 @@ namespace craft\wpimport\importers;
 use craft\base\ElementInterface;
 use craft\elements\Category as CategoryElement;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\categorygroups\Categories;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -29,7 +30,7 @@ class Category extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var CategoryElement $element */
-        $element->groupId = $this->command->categoryGroup->id;
+        $element->groupId = Categories::get()->id;
         $element->title = $data['name'];
         $element->slug = $data['slug'];
 

@@ -10,10 +10,17 @@ namespace craft\wpimport\importers;
 use Craft;
 use craft\base\ElementInterface;
 use craft\elements\Asset;
+use craft\enums\CmsEdition;
+use craft\fs\Local;
 use craft\helpers\Assets;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\FileHelper;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\fields\Caption;
+use craft\wpimport\generators\fields\Description;
+use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
+use craft\wpimport\generators\volumes\Uploads;
+use craft\wpimport\generators\volumes\Uploads as UploadsVolume;
 use yii\console\Exception;
 
 /**
@@ -36,13 +43,16 @@ class Media extends BaseImporter
         $wpPath = $data['media_details']['file'] ?? pathinfo($data['source_url'], PATHINFO_BASENAME);
         $path = pathinfo($wpPath, PATHINFO_DIRNAME);
         $filename = Assets::prepareAssetName(pathinfo($wpPath, PATHINFO_BASENAME));
-        $folder = Craft::$app->assets->ensureFolderByFullPathAndVolume($path !== '.' ? $path : '', $this->command->mediaVolume);
+        $folder = Craft::$app->assets->ensureFolderByFullPathAndVolume($path !== '.' ? $path : '', UploadsVolume::get());
 
         /** @var Asset $element */
-        $element->volumeId = $this->command->mediaVolume->id;
+        $element->volumeId = Uploads::get()->id;
         $element->title = $data['title']['raw'];
 
-        $destPath = sprintf('%s/%s/%s', $this->command->mediaFs->getRootPath(), $path, $filename);
+        /** @var Local $fs */
+        $fs = UploadsFs::get();
+        $destPath = sprintf('%s/%s/%s', $fs->getRootPath(), $path, $filename);
+
         if (file_exists($destPath)) {
             $element->folderId = $folder->id;
             $element->folderPath = $folder->path;
@@ -67,13 +77,13 @@ class Media extends BaseImporter
         $element->size = $data['media_details']['filesize'] ?? null;
         $element->dateCreated = DateTimeHelper::toDateTime($data['date_gmt']);
         $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
-        if (isset($data['author'], $this->command->userIds[$data['author']])) {
-            $element->uploaderId = $this->command->userIds[$data['author']];
+        if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
+            $element->uploaderId = $this->command->import(User::resource(), $data['author']);
         }
         $element->alt = $data['alt_text'];
         $element->setFieldValues([
-            $this->command->captionField->handle => $data['caption']['raw'],
-            $this->command->descriptionField->handle => $data['description']['raw'],
+            Caption::get()->handle => $data['caption']['raw'],
+            Description::get()->handle => $data['description']['raw'],
         ]);
     }
 }

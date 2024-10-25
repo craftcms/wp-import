@@ -9,6 +9,7 @@ namespace craft\wpimport\blocktransformers;
 
 use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
+use craft\wpimport\generators\entrytypes\Group as GroupEntryType;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class Group extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
-            $nestedEntry->setTypeId($this->command->groupEntryType->id);
+            $nestedEntry->setTypeId(GroupEntryType::get()->id);
             $nestedEntry->setFieldValue(
                 'backgroundColor',
                 $this->command->normalizeColor(

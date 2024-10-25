@@ -9,6 +9,8 @@ namespace craft\wpimport\blocktransformers;
 
 use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
+use craft\wpimport\generators\entrytypes\Details as DetailsEntryType;
+use craft\wpimport\generators\fields\Summary;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -24,11 +26,11 @@ class DsbDetails extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
-            $nestedEntry->setTypeId($this->command->detailsEntryType->id);
+            $nestedEntry->setTypeId(DetailsEntryType::get()->id);
 
             $summaryNodes = (new Crawler($data['innerHTML']))->filter('summary');
             if ($summaryNodes->count()) {
-                $nestedEntry->setFieldValue($this->command->summaryField->handle, $summaryNodes->html());
+                $nestedEntry->setFieldValue(Summary::get()->handle, $summaryNodes->html());
             }
 
             // save it so we get an ID, before parsing the nested blocks

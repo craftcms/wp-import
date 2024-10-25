@@ -16,6 +16,11 @@ use craft\enums\CmsEdition;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\StringHelper;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\entrytypes\Page as PageEntryType;
+use craft\wpimport\generators\fields\Comments;
+use craft\wpimport\generators\fields\PostContent;
+use craft\wpimport\generators\fields\Template;
+use craft\wpimport\generators\sections\Pages;
 use yii\console\Exception;
 
 /**
@@ -45,8 +50,8 @@ class Page extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var Entry $element */
-        $element->sectionId = $this->command->pagesSection->id;
-        $element->setTypeId($this->command->pageEntryType->id);
+        $element->sectionId = Pages::get()->id;
+        $element->setTypeId(PageEntryType::get()->id);
 
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
@@ -69,12 +74,12 @@ class Page extends BaseImporter
         }
 
         if ($this->command->importComments) {
-            $element->setFieldValue($this->command->commentsField->handle, [
+            $element->setFieldValue(Comments::get()->handle, [
                 'commentEnabled' => $data['comment_status'] === 'open',
             ]);
         }
 
-        $element->setFieldValue($this->command->templateField->handle, StringHelper::removeRight($data['template'] ?? '', '.php'));
+        $element->setFieldValue(Template::get()->handle, StringHelper::removeRight($data['template'] ?? '', '.php'));
 
         if (!$element->id) {
             $element->setScenario(Element::SCENARIO_ESSENTIALS);
@@ -84,6 +89,6 @@ class Page extends BaseImporter
         }
 
         // render the blocks afterward, in case we need the ID
-        $element->setFieldValue($this->command->postContentField->handle, $this->command->renderBlocks($data['content_parsed'], $element));
+        $element->setFieldValue(PostContent::get()->handle, $this->command->renderBlocks($data['content_parsed'], $element));
     }
 }

@@ -10,6 +10,7 @@ namespace craft\wpimport\importers;
 use craft\base\ElementInterface;
 use craft\elements\Tag as TagElement;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\taggroups\Tags;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -29,7 +30,7 @@ class Tag extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var TagElement $element */
-        $element->groupId = $this->command->tagGroup->id;
+        $element->groupId = Tags::get()->id;
         $element->title = $data['name'];
         $element->slug = $data['slug'];
     }
