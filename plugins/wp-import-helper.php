@@ -36,5 +36,6 @@ add_action('rest_api_init', function() {
             'permalink_structure' => get_option('permalink_structure'),
             'color_palette' => wp_get_global_settings(['color', 'palette']),
         ],
+        'permission_callback' => fn() => acf_current_user_can_admin(),
     ]);
 });
