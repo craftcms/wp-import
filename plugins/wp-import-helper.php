@@ -30,7 +30,7 @@ add_action('rest_api_init', function() {
         'schema' => $contentParsedSchema,
     ]);
 
-    register_rest_route('craftcms/v1', 'settings', [
+    register_rest_route('craftcms/v1', 'info', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => fn() => [
             'permalink_structure' => get_option('permalink_structure'),

@@ -30,7 +30,7 @@ class Posts extends BaseSectionGenerator
         // Get the permalink URL structure
         /** @var Command $command */
         $command = Craft::$app->controller;
-        $uriFormat = strtr(trim($command->wpSettings['permalink_structure'], '/'), [
+        $uriFormat = strtr(trim($command->wpInfo['permalink_structure'], '/'), [
             '%year%' => "{postDate|date('Y')}",
             '%monthnum%' => "{postDate|date('m')}",
             '%day%' => "{postDate|date('d')}",

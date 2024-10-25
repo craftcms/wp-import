@@ -149,7 +149,7 @@ class Command extends Controller
     public bool $importComments;
 
     public Client $client;
-    public array $wpSettings;
+    public array $wpInfo;
     private array $idMap = [];
     private int $importTotal = 0;
 
@@ -449,7 +449,7 @@ MD) . "\n\n");
     {
         if (isset($this->apiUrl)) {
             $this->apiUrl = $this->normalizeApiUrl($this->apiUrl);
-            $this->wpSettings = $this->get("$this->apiUrl/craftcms/v1/settings");
+            $this->wpInfo = $this->get("$this->apiUrl/craftcms/v1/info");
         } else {
             $this->apiUrl = $this->normalizeApiUrl($this->prompt('REST API URL:', [
                 'required' => true,
@@ -460,7 +460,7 @@ MD) . "\n\n");
                     }
 
                     try {
-                        $this->wpSettings = $this->get("$value/craftcms/v1/settings");
+                        $this->wpInfo = $this->get("$value/craftcms/v1/info");
                     } catch (Throwable $e) {
                         if ($e instanceof ClientException && $e->getResponse()->getStatusCode() === 404) {
                             $error = $this->markdownToAnsi('The `wp-import Helper` WordPress plugin doesn’t appear to be installed.');
@@ -1008,7 +1008,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             return $color;
         }
 
-        foreach ($this->wpSettings['color_palette'] as $palette) {
+        foreach ($this->wpInfo['color_palette'] as $palette) {
             foreach ($palette as $paletteColor) {
                 if ($paletteColor['slug'] === $color) {
                     return $paletteColor['color'];

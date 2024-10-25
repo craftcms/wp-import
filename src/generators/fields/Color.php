@@ -32,7 +32,7 @@ class Color extends BaseFieldGenerator
         /** @var Command $command */
         $command = Craft::$app->controller;
         $presets = [];
-        foreach ($command->wpSettings['color_palette'] as $palette) {
+        foreach ($command->wpInfo['color_palette'] as $palette) {
             foreach ($palette as $paletteColor) {
                 $presets[$paletteColor['color']] = true;
             }
