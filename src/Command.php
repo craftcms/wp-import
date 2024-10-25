@@ -28,6 +28,8 @@ use craft\models\FieldLayoutTab;
 use craft\models\Section;
 use craft\models\TagGroup;
 use craft\validators\ColorValidator;
+use craft\wpimport\errors\ImportException;
+use craft\wpimport\errors\UnknownBlockTypeException;
 use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\importers\Category;
 use craft\wpimport\importers\Comment as CommentImporter;
@@ -121,9 +123,19 @@ class Command extends Controller
     public bool $update = false;
 
     /**
+     * @var bool Treat this as a dry run only
+     */
+    public bool $dryRun = false;
+
+    /**
      * @var bool Abort the import on the first error encountered
      */
     public bool $failFast = false;
+
+    /**
+     * @var bool Show an error summary at the end of the import
+     */
+    public bool $showSummary = true;
 
     /**
      * @var BaseImporter[]
@@ -137,6 +149,16 @@ class Command extends Controller
 
     public Client $client;
     private array $idMap = [];
+    private int $importTotal = 0;
+
+    /**
+     * @var array<string,bool>
+     */
+    public array $unknownBlockTypes = [];
+    /**
+     * @var Throwable[]
+     */
+    public array $errors = [];
 
     public function init(): void
     {
@@ -154,7 +176,9 @@ class Command extends Controller
             'page',
             'perPage',
             'update',
+            'dryRun',
             'failFast',
+            'showSummary',
         ]);
 
         if ($actionID !== 'all') {
@@ -223,19 +247,33 @@ class Command extends Controller
             $this->stdout("\n");
         }
 
-        foreach ($resources as $resource) {
-            $this->runAction($resource, [
-                'apiUrl' => $this->apiUrl,
-                'username' => $this->username,
-                'password' => $this->password,
-                'page' => $this->page,
-                'perPage' => $this->perPage,
-                'update' => $this->update,
-                'failFast' => $this->failFast,
-                'interactive' => false,
-            ]);
+        if ($this->dryRun) {
+            $transaction = Craft::$app->getDb()->beginTransaction();
         }
 
+        $dryRun = $this->dryRun;
+        $showSummary = $this->showSummary;
+        $interactive = $this->interactive;
+
+        try {
+            foreach ($resources as $resource) {
+                $this->runAction($resource, [
+                    'dryRun' => false,
+                    'showSummary' => false,
+                    'interactive' => false,
+                ]);
+            }
+        } finally {
+            if (isset($transaction)) {
+                $transaction->rollBack();
+            }
+
+            $this->dryRun = $dryRun;
+            $this->showSummary = $showSummary;
+            $this->interactive = $interactive;
+        }
+
+        $this->outputSummary();
         return ExitCode::OK;
     }
 
@@ -259,8 +297,20 @@ class Command extends Controller
     public function renderBlocks(array $blocks, Entry $entry): string
     {
         $html = '';
+        $firstError = null;
         foreach ($blocks as $block) {
-            $html .= $this->renderBlock($block, $entry);
+            try {
+                $html .= $this->renderBlock($block, $entry);
+            } catch (UnknownBlockTypeException $e) {
+                // capture the block type and then keep going, so we can capture
+                // any other unknown block types in here
+                $this->unknownBlockTypes[$e->blockType] = true;
+                $this->errors[] = $e;
+                $firstError ??= $e;
+            }
+        }
+        if ($firstError) {
+            throw $firstError;
         }
         return $html;
     }
@@ -273,7 +323,7 @@ class Command extends Controller
         }
 
         if (!isset($this->blockTransformers[$block['blockName']])) {
-            throw new Exception("Unknown block type: $block[blockName]");
+            throw new UnknownBlockTypeException($block['blockName'], $block);
         }
 
         $html = $this->blockTransformers[$block['blockName']]->render($block, $entry);
@@ -750,46 +800,58 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         $name = trim(($data['name'] ?? null) ?: ($data['title']['raw'] ?? null) ?: ($data['slug'] ?? null) ?: '');
         $name = ($name !== '' && $name != $id) ? "`$name` (`$id`)" : "`$id`";
 
-        $this->do("Importing $resourceLabel $name", function() use (
-            $data,
-            $id,
-            $queryParams,
-            $importer,
-            $elementType,
-            &$element,
-        ) {
-            Console::indent();
-            try {
-                if (is_int($data)) {
-                    $data = $this->item($importer::resource(), $data, $queryParams);
-                }
-
-                $element ??= $importer->find($data) ?? new $elementType();
-                $importer->populate($element, $data);
-                $element->{WpId::get()->handle} = $id;
-
-                if ($element->getScenario() === Model::SCENARIO_DEFAULT) {
-                    $element->setScenario(Element::SCENARIO_ESSENTIALS);
-                }
-
-                if ($element instanceof User && Craft::$app->edition->value < CmsEdition::Pro->value) {
-                    $edition = Craft::$app->edition;
-                    Craft::$app->edition = CmsEdition::Pro;
-                }
-
+        try {
+            $this->do("Importing $resourceLabel $name", function() use (
+                $resource,
+                $data,
+                $id,
+                $queryParams,
+                $importer,
+                $elementType,
+                &$element,
+            ) {
+                Console::indent();
                 try {
-                    if (!Craft::$app->elements->saveElement($element)) {
-                        throw new Exception(implode(', ', $element->getFirstErrors()));
+                    if (is_int($data)) {
+                        $data = $this->item($importer::resource(), $data, $queryParams);
+                    }
+
+                    $element ??= $importer->find($data) ?? new $elementType();
+                    $importer->populate($element, $data);
+                    $element->{WpId::get()->handle} = $id;
+
+                    if ($element->getScenario() === Model::SCENARIO_DEFAULT) {
+                        $element->setScenario(Element::SCENARIO_ESSENTIALS);
+                    }
+
+                    if ($element instanceof User && Craft::$app->edition->value < CmsEdition::Pro->value) {
+                        $edition = Craft::$app->edition;
+                        Craft::$app->edition = CmsEdition::Pro;
+                    }
+
+                    try {
+                        if (!Craft::$app->elements->saveElement($element)) {
+                            throw new Exception(implode(', ', $element->getFirstErrors()));
+                        }
+
+                        $this->importTotal++;
+                    } finally {
+                        if (isset($edition)) {
+                            Craft::$app->edition = $edition;
+                        }
                     }
                 } finally {
-                    if (isset($edition)) {
-                        Craft::$app->edition = $edition;
-                    }
+                    Console::outdent();
                 }
-            } finally {
-                Console::outdent();
+            });
+        } catch (Throwable $e) {
+            // UnknownBlockTypeException's have already been captured
+            if (!$e instanceof UnknownBlockTypeException) {
+                $e = new ImportException($resource, $id, $e);
+                $this->errors[] = $e;
             }
-        });
+            throw $e;
+        }
 
         return $this->idMap[$resource][$id] = $element->id;
     }
@@ -860,6 +922,64 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 throw $e;
             }
             return Json::decode(substr($body, $matches[0][1]));
+        }
+    }
+
+    public function outputSummary(): void
+    {
+        if (!$this->showSummary) {
+            return;
+        }
+
+        $dryRunLabel = $this->dryRun ? '**[DRY RUN]** ' : '';
+        $importMessage = sprintf('Imported %s successfully', $this->importTotal === 1 ? '1 item' : "$this->importTotal items");
+
+        if (empty($this->errors)) {
+            $this->success($dryRunLabel . $importMessage);
+        } else {
+            $report = '';
+            $hr = sprintf("%s\n", str_repeat('-', 80));
+
+            if (!empty($this->unknownBlockTypes)) {
+                $report .= "The following unknown block types were encountered:\n";
+                foreach (array_keys($this->unknownBlockTypes) as $type) {
+                    $report .= " - $type\n";
+                }
+                $report .= "$hr";
+            }
+
+            foreach ($this->errors as $i => $e) {
+                if ($i !== 0) {
+                    $report .= $hr;
+                }
+
+                $report .= "Error: {$e->getMessage()}\n";
+                if ($e instanceof UnknownBlockTypeException) {
+                    $report .= sprintf(
+                        "Block data:\n%s\n",
+                        Json::encode($e->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                    );
+                } else {
+                    if ($e instanceof ImportException) {
+                        $report .= "Resource: $e->resource\n";
+                        $report .= "Item ID: $e->itemId\n";
+                        $e = $e->getPrevious();
+                    }
+                    $report .= sprintf("Location: %s\n", implode(':', array_filter([$e->getFile(), $e->getLine()])));
+                    $report .= sprintf("Trace:\n%s\n", $e->getTraceAsString());
+                }
+            }
+
+            $reportPath = Craft::getAlias('@root/wp-import-errors.txt');
+            FileHelper::writeToFile($reportPath, $report);
+
+            $totalErrors = count($this->errors);
+            $errorMessage = sprintf('%s encountered.', $totalErrors === 1 ? '1 error was' : "$totalErrors errors were");
+            if ($this->importTotal) {
+                $errorMessage = "$importMessage, but $errorMessage";
+            }
+            $errorMessage .= "\nError details have been logged to `$reportPath`.";
+            $this->failure($dryRunLabel . $errorMessage);
         }
     }
 

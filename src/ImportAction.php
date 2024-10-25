@@ -7,6 +7,7 @@
 
 namespace craft\wpimport;
 
+use Craft;
 use craft\helpers\Console;
 use Throwable;
 use yii\base\Action;
@@ -36,15 +37,18 @@ class ImportAction extends Action
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        if (!empty($this->controller->itemId)) {
-            foreach ($this->controller->itemId as $id) {
-                $this->controller->import($this->resource, $id);
-            }
-        } else {
+        if ($this->controller->dryRun) {
+            $transaction = Craft::$app->db->beginTransaction();
+        }
+
+        try {
             $this->controller->do("Importing $this->resource", function() {
                 Console::indent();
                 try {
-                    foreach ($this->controller->items($this->resource) as $data) {
+                    $items = $this->controller->items($this->resource, [
+                        'include' => implode(',', $this->controller->itemId),
+                    ]);
+                    foreach ($items as $data) {
                         try {
                             $this->controller->import($this->resource, $data);
                         } catch (Throwable $e) {
@@ -57,6 +61,14 @@ class ImportAction extends Action
                     Console::outdent();
                 }
             });
+        } catch (Throwable) {
+            return ExitCode::UNSPECIFIED_ERROR;
+        } finally {
+            if (isset($transaction)) {
+                $transaction->rollBack();
+            }
+
+            $this->controller->outputSummary();
         }
 
         return ExitCode::OK;
