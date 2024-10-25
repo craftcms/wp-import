@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: wp-import Helper
+ * Plugin Name: wp-import helper
  * Description: Makes additional data available via the REST API for the wp-import Craft CMS extension.
  * Plugin URI:  https://github.com/craftcms/wp-import
  * Version:     1.0
