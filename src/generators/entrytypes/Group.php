@@ -51,10 +51,12 @@ class Group extends BaseEntryTypeGenerator
                     new CustomField(Color::get(), [
                         'label' => 'Background Color',
                         'handle' => 'backgroundColor',
+                        'includeInCards' => true,
                     ]),
                     new CustomField(Color::get(), [
                         'label' => 'Text Color',
                         'handle' => 'textColor',
+                        'includeInCards' => true,
                     ]),
                     new CustomField(PostContent::get()),
                 ],
