@@ -913,7 +913,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 } catch (InvalidArgumentException) {
                     throw $e;
                 }
-                if ($body['code'] ?? null === 'rest_post_invalid_page_number') {
+                if (($body['code'] ?? null) === 'rest_post_invalid_page_number') {
                     return [];
                 }
                 throw $e;
