@@ -41,6 +41,7 @@ use craft\wpimport\importers\User as UserImporter;
 use Generator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -900,17 +901,30 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
     public function get(string $uri, array $queryParams = [], ?ResponseInterface &$response = null): array
     {
-        $response = $this->client->get($uri, [
-            RequestOptions::AUTH => [$this->username, $this->password],
-            RequestOptions::QUERY => $queryParams,
-        ]);
-
-        if ($response->getStatusCode() !== 200) {
-            throw new Exception(sprintf("%s gave a %s response.", $uri, $response->getStatusCode()));
+        try {
+            $response = $this->client->get($uri, [
+                RequestOptions::AUTH => [$this->username, $this->password],
+                RequestOptions::QUERY => $queryParams,
+            ]);
+        } catch (RequestException $e) {
+            if ($e->getResponse()->getStatusCode() === 400) {
+                try {
+                    $body = $this->decodeBody((string)$e->getResponse()->getBody());
+                } catch (InvalidArgumentException) {
+                    throw $e;
+                }
+                if ($body['code'] ?? null === 'rest_post_invalid_page_number') {
+                    return [];
+                }
+                throw $e;
+            }
         }
 
-        $body = (string)$response->getBody();
+        return $this->decodeBody((string)$response->getBody());
+    }
 
+    private function decodeBody(string $body): array
+    {
         try {
             return Json::decode($body);
         } catch (InvalidArgumentException $e) {
