@@ -41,6 +41,7 @@ use craft\wpimport\importers\Tag;
 use craft\wpimport\importers\User as UserImporter;
 use Generator;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Collection;
 use Psr\Http\Message\ResponseInterface;
@@ -410,14 +411,13 @@ MD) . "\n\n");
                     }
 
                     try {
-                        $body = $this->get("$value/wp/v2");
+                        $this->get("$value/craftcms/v1/settings");
                     } catch (Throwable $e) {
-                        $error = $e->getMessage();
-                        return false;
-                    }
-
-                    if (!isset($body['routes']['/wp/v2/posts']['endpoints'][1]['args']['content_parsed'])) {
-                        $error = 'The “Parse Blocks” WordPress plugin doesn’t appear to be installed.';
+                        if ($e instanceof ClientException && $e->getResponse()->getStatusCode() === 404) {
+                            $error = $this->markdownToAnsi('The `wp-import Helper` WordPress plugin doesn’t appear to be installed.');
+                        } else {
+                            $error = $e->getMessage();
+                        }
                         return false;
                     }
 
