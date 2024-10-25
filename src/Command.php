@@ -334,7 +334,7 @@ class Command extends Controller
 
     private function totalItems(string $resource): int
     {
-        $response = $this->client->get("$this->apiUrl/$resource", [
+        $response = $this->client->get("$this->apiUrl/wp/v2/$resource", [
             RequestOptions::AUTH => [$this->username, $this->password],
             RequestOptions::QUERY => $this->resourceQueryParams($resource),
         ]);
