@@ -803,7 +803,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
         try {
             $this->do("Importing $resourceLabel $name", function() use (
-                $resource,
                 $data,
                 $id,
                 $queryParams,
