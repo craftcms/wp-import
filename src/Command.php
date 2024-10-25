@@ -410,7 +410,7 @@ MD) . "\n\n");
                     }
 
                     try {
-                        $body = $this->get($value);
+                        $body = $this->get("$value/wp/v2");
                     } catch (Throwable $e) {
                         $error = $e->getMessage();
                         return false;
@@ -445,7 +445,7 @@ MD) . "\n\n");
 
             try {
                 $this->do('Verifying credentials', function() {
-                    $response = $this->client->get("$this->apiUrl/posts", [
+                    $response = $this->client->get("$this->apiUrl/wp/v2/posts", [
                         RequestOptions::AUTH => [$this->username, $this->password],
                         RequestOptions::QUERY => ['context' => 'edit'],
                     ]);
@@ -462,7 +462,8 @@ MD) . "\n\n");
     private function normalizeApiUrl(string $url): string
     {
         $url = StringHelper::removeRight($url, '/');
-        $url = StringHelper::ensureRight($url, '/v2');
+        $url = StringHelper::removeRight($url, '/v2');
+        $url = StringHelper::removeRight($url, '/wp');
         return $url;
     }
 
@@ -809,7 +810,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         $page = $this->page ?? 1;
         do {
             $body = $this->get(
-                "$this->apiUrl/$resource",
+                "$this->apiUrl/wp/v2/$resource",
                 array_merge($this->resourceQueryParams($resource), [
                     'page' => $page,
                     'per_page' => $this->perPage,
@@ -826,7 +827,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
     public function item(string $resource, int $id, array $queryParams = []): array
     {
         return $this->get(
-            "$this->apiUrl/$resource/$id",
+            "$this->apiUrl/wp/v2/$resource/$id",
             array_merge($this->resourceQueryParams($resource), $queryParams),
         );
     }
@@ -838,7 +839,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         ], $this->importers[$resource]::queryParams());
     }
 
-    private function get(string $uri, array $queryParams = [], ?ResponseInterface &$response = null): array
+    public function get(string $uri, array $queryParams = [], ?ResponseInterface &$response = null): array
     {
         $response = $this->client->get($uri, [
             RequestOptions::AUTH => [$this->username, $this->password],

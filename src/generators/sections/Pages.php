@@ -33,7 +33,9 @@ class Pages extends BaseSectionGenerator
         $section->setSiteSettings([
             new Section_SiteSettings([
                 'siteId' => Craft::$app->sites->getPrimarySite()->id,
+                'hasUrls' => true,
                 'uriFormat' => '{slug}',
+                'template' => '_page.twig',
             ]),
         ]);
         $section->previewTargets = [

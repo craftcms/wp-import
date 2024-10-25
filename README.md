@@ -53,11 +53,11 @@ Craft 5.5+ is required, as well as the [CKEditor](https://plugins.craftcms.com/c
 
 ## Setup
 
-### 1. Install the Parse Blocks plugin
+### 1. Install the wp-import helper plugin
 
-The import makes use of WordPress’ REST API. The API has *almost* everything we need out of the box, except for parsed content block data. To fix that, you’ll need to install a simple WordPress plugin that adds the additional data we need to authenticated API results.
+The import makes use of WordPress’ REST API. The API has *almost* everything we need out of the box, except for a couple things. To fix that, you’ll need to install a simple WordPress plugin that adds the additional data we need to API results.
 
-To do that, save [plugins/parse-blocks.php](plugins/parse-blocks.php) to the `wp-content/plugins/` folder within your WordPress site. Then log into your WP Admin Dashboard and navigate to **Plugins**. Press **Activate** for the “Parse Blocks” plugin.
+To do that, save [plugins/wp-import-helper.php](plugins/wp-import-helper.php) to the `wp-content/plugins/` folder within your WordPress site. Then log into your WP Admin Dashboard and navigate to **Plugins**. Press **Activate** for the “wp-import Helper” plugin.
 
 ### 2. Create an application password
 
@@ -97,7 +97,7 @@ Run the following CLI command to initiate the import:
 ddev craft wp-import
 ```
 
-You’ll be prompted for your REST API URL, which should be something like `https://example.com/wp-json/wp/v2`. You’ll also need to provide the username and application password you wrote down earlier.
+You’ll be prompted for your REST API URL, which should be something like `https://example.com/wp-json`. You’ll also need to provide the username and application password you wrote down earlier.
 
 The command will then prepare a content model for your WordPress content. At a high level, that includes:
 

@@ -12,6 +12,7 @@ use craft\elements\Entry;
 use craft\models\Section;
 use craft\models\Section_SiteSettings;
 use craft\wpimport\BaseSectionGenerator;
+use craft\wpimport\Command;
 use craft\wpimport\generators\entrytypes\Post;
 
 /**
@@ -26,6 +27,23 @@ class Posts extends BaseSectionGenerator
 
     protected static function populate(Section $section): void
     {
+        // Get the permalink URL structure
+        /** @var Command $command */
+        $command = Craft::$app->controller;
+        $settings = $command->get("$command->apiUrl/craftcms/v1/settings");
+        $uriFormat = strtr(trim($settings['permalink_structure'], '/'), [
+            '%year%' => "{postDate|date('Y')}",
+            '%monthnum%' => "{postDate|date('m')}",
+            '%day%' => "{postDate|date('d')}",
+            '%hour%' => "{postDate|date('H')}",
+            '%minute%' => "{postDate|date('i')}",
+            '%second%' => "{postDate|date('s')}",
+            '%post_id%' => '{id}',
+            '%postname%' => '{slug}',
+            '%category%' => "{categories.one().slug ?? 'uncategorized'}",
+            '%author%' => '{author.username}',
+        ]);
+
         $section->name = 'Posts';
         $section->handle = 'posts';
         $section->type = Section::TYPE_CHANNEL;
@@ -33,7 +51,9 @@ class Posts extends BaseSectionGenerator
         $section->setSiteSettings([
             new Section_SiteSettings([
                 'siteId' => Craft::$app->sites->getPrimarySite()->id,
-                'uriFormat' => '{slug}',
+                'hasUrls' => true,
+                'uriFormat' => $uriFormat,
+                'template' => '_post.twig',
             ]),
         ]);
         $section->previewTargets = [
