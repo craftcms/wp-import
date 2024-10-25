@@ -99,14 +99,12 @@ ddev craft wp-import
 
 You’ll be prompted for your REST API URL, which should be something like `https://example.com/wp-json`. You’ll also need to provide the username and application password you wrote down earlier.
 
-The command will then prepare a content model for your WordPress content. At a high level, that includes:
+The command will then begin importing your content, creating content model components as needed, such as:
 
 - A “Posts” section for your posts.
 - A “Pages” section for your pages.
 - An “Uploads” filesystem and volume for your media.
 - A “Post Content” CKEditor field with some nested entry types for storing non-HTML block data.
-
-Then it will get busy with the import!
 
 You can import any new content by running the command again later on. Or import just certain posts (etc.) using the `--item-id` option:
 
