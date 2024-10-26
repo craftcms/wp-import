@@ -32,7 +32,7 @@ class Audio extends BaseBlockTransformer
         }
 
         try {
-            $assetId = $this->command->import(Media::resource(), $id);
+            $assetId = $this->command->import(Media::RESOURCE, $id);
         } catch (Throwable) {
             return '';
         }

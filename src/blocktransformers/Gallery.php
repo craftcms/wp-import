@@ -31,7 +31,7 @@ class Gallery extends BaseBlockTransformer
             ->filter(fn(array $block) => $block['blockName'] === 'core/image')
             ->map(function(array $block) {
                 try {
-                    return $this->command->import(Media::resource(), $block['attrs']['id']);
+                    return $this->command->import(Media::RESOURCE, $block['attrs']['id']);
                 } catch (Throwable) {
                     return null;
                 }

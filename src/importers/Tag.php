@@ -17,12 +17,19 @@ use craft\wpimport\generators\taggroups\Tags;
  */
 class Tag extends BaseImporter
 {
-    public static function resource(): string
+    public const RESOURCE = 'tags';
+
+    public function resource(): string
     {
-        return 'tags';
+        return self::RESOURCE;
     }
 
-    public static function elementType(): string
+    public function label(): string
+    {
+        return 'Tags';
+    }
+
+    public function elementType(): string
     {
         return TagElement::class;
     }

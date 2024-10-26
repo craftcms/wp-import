@@ -86,7 +86,7 @@ class Command extends Controller
     /**
      * @inheritdoc
      */
-    public $defaultAction = 'all';
+    public $defaultAction = 'import';
 
     /**
      * @var string|null The base API URL (e.g. `https://example.com/wp-json/wp/v2/`)
@@ -171,10 +171,11 @@ class Command extends Controller
 
     public function options($actionID): array
     {
-        $options = array_merge(parent::options($actionID), [
+        return array_merge(parent::options($actionID), [
             'apiUrl',
             'username',
             'password',
+            'itemId',
             'page',
             'perPage',
             'update',
@@ -182,22 +183,19 @@ class Command extends Controller
             'failFast',
             'showSummary',
         ]);
-
-        if ($actionID !== 'all') {
-            $options[] = 'itemId';
-        }
-
-        return $options;
     }
 
-    public function beforeAction($action): bool
+    /**
+     * Imports items from WordPress.
+     *
+     * @param string $resource The resource to import (`posts`, `pages`, `media`,
+     * `categories`, `tags`, `users`, or `comments`)
+     * @return int
+     */
+    public function actionImport(string $resource = 'all'): int
     {
-        if (!parent::beforeAction($action)) {
-            return false;
-        }
-
-        if (!$this->systemCheck($action)) {
-            return false;
+        if (!$this->systemCheck($resource)) {
+            return ExitCode::OK;
         }
 
         $this->client = Craft::createGuzzleClient([
@@ -207,33 +205,29 @@ class Command extends Controller
         $this->captureApiInfo();
         $this->editionCheck();
 
-        return true;
-    }
+        if ($resource === 'all') {
+            // Use this specific order so we don't need to do as many one-off item imports
+            $resources = [
+                UserImporter::RESOURCE,
+                Media::RESOURCE,
+                Category::RESOURCE,
+                Tag::RESOURCE,
+                Post::RESOURCE,
+                Page::RESOURCE,
+                CommentImporter::RESOURCE,
+            ];
+        } else {
+            $resources = [$resource];
+        }
 
-    /**
-     * Imports all items from WordPress.
-     *
-     * @return int
-     */
-    public function actionAll(): int
-    {
-        $resources = [
-            'Users' => UserImporter::resource(),
-            'Media' => Media::resource(),
-            'Categories' => Category::resource(),
-            'Tags' => Tag::resource(),
-            'Posts' => Post::resource(),
-            'Pages' => Page::resource(),
-            'Comments' => CommentImporter::resource(),
-        ];
         $resources = array_filter($resources, fn(string $resource) => $this->isSupported($resource));
         $totals = [];
 
         if ($this->interactive) {
             $this->do('Fetching info', function() use ($resources, &$totals) {
-                foreach ($resources as $label => $resource) {
+                foreach ($resources as $resource) {
                     $totals[] = [
-                        $label,
+                        $this->importers[$resource]->label(),
                         [Craft::$app->formatter->asInteger($this->totalItems($resource)), 'align' => 'right'],
                     ];
                 }
@@ -253,47 +247,36 @@ class Command extends Controller
             $transaction = Craft::$app->getDb()->beginTransaction();
         }
 
-        $dryRun = $this->dryRun;
-        $showSummary = $this->showSummary;
-        $interactive = $this->interactive;
-
         try {
             foreach ($resources as $resource) {
-                $this->runAction($resource, [
-                    'dryRun' => false,
-                    'showSummary' => false,
-                    'interactive' => false,
-                ]);
+                $this->do("Importing $resource", function() use ($resource) {
+                    Console::indent();
+                    try {
+                        $items = $this->items($resource, [
+                            'include' => implode(',', $this->itemId),
+                        ]);
+                        foreach ($items as $data) {
+                            try {
+                                $this->import($resource, $data);
+                            } catch (Throwable $e) {
+                                if ($this->failFast) {
+                                    throw $e;
+                                }
+                            }
+                        }
+                    } finally {
+                        Console::outdent();
+                    }
+                });
             }
         } finally {
             if (isset($transaction)) {
                 $transaction->rollBack();
             }
-
-            $this->dryRun = $dryRun;
-            $this->showSummary = $showSummary;
-            $this->interactive = $interactive;
         }
 
         $this->outputSummary();
         return ExitCode::OK;
-    }
-
-    protected function defineActions(): array
-    {
-        $actions = parent::defineActions();
-
-        foreach ($this->importers as $resource => $importer) {
-            $actions[$resource] = [
-                'helpSummary' => "Imports WordPress $resource.",
-                'action' => [
-                    'class' => ImportAction::class,
-                    'resource' => $resource,
-                ],
-            ];
-        }
-
-        return $actions;
     }
 
     public function renderBlocks(array $blocks, Entry $entry): string
@@ -345,7 +328,7 @@ class Command extends Controller
         foreach ($types as $class) {
             /** @var BaseImporter $importer */
             $importer = new $class($this);
-            $this->importers[$importer::resource()] = $importer;
+            $this->importers[$importer->resource()] = $importer;
         }
     }
 
@@ -393,7 +376,7 @@ class Command extends Controller
         return (int)$response->getHeaderLine('X-WP-Total');
     }
 
-    private function systemCheck(Action $action): bool
+    private function systemCheck(?string $resource): bool
     {
         if (!Craft::$app->getIsInstalled()) {
             $this->output('Craft isn’t installed yet.', Console::FG_RED);
@@ -419,7 +402,7 @@ MD) . "\n\n");
             $this->stdout("\n");
         }
 
-        if ($this->interactive && in_array($action->id, ['all', 'comments'])) {
+        if ($this->interactive && in_array($resource, ['all', 'comments'])) {
             if (!Craft::$app->plugins->isPluginInstalled('comments')) {
                 $this->note($this->markdownToAnsi(<<<MD
 The Comments plugin (by Verbb) must be installed if you wish to import comments.
@@ -526,7 +509,7 @@ MD) . "\n\n");
             return;
         }
 
-        $totalWpUsers = $this->totalItems(UserImporter::resource());
+        $totalWpUsers = $this->totalItems(UserImporter::RESOURCE);
         if ($totalWpUsers === 1) {
             return;
         }
@@ -788,7 +771,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
         // Already exists?
         /** @var string|ElementInterface $elementType */
-        $elementType = $importer::elementType();
+        $elementType = $importer->elementType();
         $element = $elementType::find()
             ->{WpId::get()->handle}($id)
             ->status(null)
@@ -815,7 +798,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 Console::indent();
                 try {
                     if (is_int($data)) {
-                        $data = $this->item($importer::resource(), $data, $queryParams);
+                        $data = $this->item($importer->resource(), $data, $queryParams);
                     }
 
                     $element ??= $importer->find($data) ?? new $elementType();
@@ -897,7 +880,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
     {
         return array_merge([
             'context' => 'edit',
-        ], $this->importers[$resource]::queryParams());
+        ], $this->importers[$resource]->queryParams());
     }
 
     public function get(string $uri, array $queryParams = [], ?ResponseInterface &$response = null): array

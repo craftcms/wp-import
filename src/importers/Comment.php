@@ -25,12 +25,19 @@ use verbb\comments\services\Comments as CommentsService;
  */
 class Comment extends BaseImporter
 {
-    public static function resource(): string
+    public const RESOURCE = 'comments';
+
+    public function resource(): string
     {
-        return 'comments';
+        return self::RESOURCE;
     }
 
-    public static function elementType(): string
+    public function label(): string
+    {
+        return 'Comments';
+    }
+
+    public function elementType(): string
     {
         return CommentElement::class;
     }
@@ -68,13 +75,13 @@ class Comment extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var CommentElement $element */
-        $element->ownerId = $this->command->import(Post::resource(), $data['post']);
+        $element->ownerId = $this->command->import(Post::RESOURCE, $data['post']);
         $element->ownerSiteId = Craft::$app->sites->primarySite->id;
         $element->siteId = Craft::$app->sites->primarySite->id;
 
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
-                $element->userId = $this->command->import(User::resource(), $data['author'], [
+                $element->userId = $this->command->import(User::RESOURCE, $data['author'], [
                     'roles' => 'administrator,editor,author,contributor,viewer,subscriber',
                 ]);
             } catch (Throwable) {
@@ -99,7 +106,7 @@ class Comment extends BaseImporter
         };
 
         if ($data['parent']) {
-            $element->setParentId($this->command->import(static::resource(), $data['parent']));
+            $element->setParentId($this->command->import(self::RESOURCE, $data['parent']));
         }
     }
 }

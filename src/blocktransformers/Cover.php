@@ -40,7 +40,7 @@ class Cover extends BaseBlockTransformer
         $id = $data['attrs']['id'] ?? null;
         if ($id) {
             try {
-                $assetId = $this->command->import(Media::resource(), $id);
+                $assetId = $this->command->import(Media::RESOURCE, $id);
             } catch (Throwable) {
                 $assetId = null;
             }

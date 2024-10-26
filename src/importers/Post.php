@@ -30,19 +30,26 @@ use yii\console\Exception;
  */
 class Post extends BaseImporter
 {
-    public static function resource(): string
+    public const RESOURCE = 'posts';
+
+    public function resource(): string
     {
-        return 'posts';
+        return self::RESOURCE;
     }
 
-    public static function queryParams(): array
+    public function label(): string
+    {
+        return 'Posts';
+    }
+
+    public function queryParams(): array
     {
         return [
             'status' => 'publish,future,draft,pending,private',
         ];
     }
 
-    public static function elementType(): string
+    public function elementType(): string
     {
         return Entry::class;
     }
@@ -56,7 +63,7 @@ class Post extends BaseImporter
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
         } else {
-            $element->setAuthorId($this->command->import(User::resource(), $data['author']));
+            $element->setAuthorId($this->command->import(User::RESOURCE, $data['author']));
         }
 
         $element->title = $data['title']['raw'] ?: null;
@@ -66,15 +73,15 @@ class Post extends BaseImporter
         $element->enabled = in_array($data['status'], ['publish', 'future']);
 
         if ($data['featured_media']) {
-            $element->setFieldValue('featuredImage', $this->command->import(Media::resource(), $data['featured_media']));
+            $element->setFieldValue('featuredImage', $this->command->import(Media::RESOURCE, $data['featured_media']));
         }
 
         $element->setFieldValues([
             'excerpt' => $data['excerpt']['raw'],
             Format::get()->handle => $data['format'],
             Sticky::get()->handle => $data['sticky'],
-            Categories::get()->handle => array_map(fn(int $id) => $this->command->import(Category::resource(), $id), $data['categories']),
-            Tags::get()->handle => array_map(fn(int $id) => $this->command->import(Tag::resource(), $id), $data['tags']),
+            Categories::get()->handle => array_map(fn(int $id) => $this->command->import(Category::RESOURCE, $id), $data['categories']),
+            Tags::get()->handle => array_map(fn(int $id) => $this->command->import(Tag::RESOURCE, $id), $data['tags']),
         ]);
 
         if ($this->command->importComments) {

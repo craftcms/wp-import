@@ -22,19 +22,26 @@ use craft\wpimport\generators\fields\WpId;
  */
 class User extends BaseImporter
 {
-    public static function resource(): string
+    public const RESOURCE = 'users';
+
+    public function resource(): string
     {
-        return 'users';
+        return self::RESOURCE;
     }
 
-    public static function queryParams(): array
+    public function label(): string
+    {
+        return 'Users';
+    }
+
+    public function queryParams(): array
     {
         return [
             'roles' => 'administrator,editor,author,contributor',
         ];
     }
 
-    public static function elementType(): string
+    public function elementType(): string
     {
         return UserElement::class;
     }

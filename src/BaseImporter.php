@@ -18,19 +18,31 @@ use yii\base\BaseObject;
  */
 abstract class BaseImporter extends BaseObject
 {
+    public function __construct(
+        protected Command $command,
+        array $config = [],
+    ) {
+        parent::__construct($config);
+    }
+
     /**
      * Returns the resource name (e.g. `posts`).
      *
      * @return string
      */
-    abstract public static function resource(): string;
+    abstract public function resource(): string;
+
+    /**
+     * Returns the resource label (e.g. `Posts`).
+     */
+    abstract public function label(): string;
 
     /**
      * Returns query params that should be passed to the API.
      *
      * @return array
      */
-    public static function queryParams(): array
+    public function queryParams(): array
     {
         return [];
     }
@@ -41,14 +53,7 @@ abstract class BaseImporter extends BaseObject
      * @return string
      * @phpstan-return class-string<ElementInterface>
      */
-    abstract public static function elementType(): string;
-
-    public function __construct(
-        protected Command $command,
-        array $config = [],
-    ) {
-        parent::__construct($config);
-    }
+    abstract public function elementType(): string;
 
     /**
      * Returns whether importing this resource is supported.

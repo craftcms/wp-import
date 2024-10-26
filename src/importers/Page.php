@@ -28,12 +28,19 @@ use yii\console\Exception;
  */
 class Page extends BaseImporter
 {
-    public static function resource(): string
+    public const RESOURCE = 'pages';
+
+    public function resource(): string
     {
-        return 'pages';
+        return self::RESOURCE;
     }
 
-    public static function queryParams(): array
+    public function label(): string
+    {
+        return 'Pages';
+    }
+
+    public function queryParams(): array
     {
         return [
             'status' => 'publish,future,draft,pending,private',
@@ -42,7 +49,7 @@ class Page extends BaseImporter
         ];
     }
 
-    public static function elementType(): string
+    public function elementType(): string
     {
         return Entry::class;
     }
@@ -56,11 +63,11 @@ class Page extends BaseImporter
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
         } else {
-            $element->setAuthorId($this->command->import(User::resource(), $data['author']));
+            $element->setAuthorId($this->command->import(User::RESOURCE, $data['author']));
         }
 
         if ($data['parent']) {
-            $element->setParentId($this->command->import(static::resource(), $data['parent']));
+            $element->setParentId($this->command->import(static::RESOURCE, $data['parent']));
         }
 
         $element->title = $data['title']['raw'] ?: null;
@@ -70,7 +77,7 @@ class Page extends BaseImporter
         $element->enabled = in_array($data['status'], ['publish', 'future']);
 
         if ($data['featured_media']) {
-            $element->setFieldValue('featuredImage', $this->command->import(Media::resource(), $data['featured_media']));
+            $element->setFieldValue('featuredImage', $this->command->import(Media::RESOURCE, $data['featured_media']));
         }
 
         if ($this->command->importComments) {
