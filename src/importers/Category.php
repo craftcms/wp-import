@@ -17,11 +17,16 @@ use craft\wpimport\generators\categorygroups\Categories;
  */
 class Category extends BaseImporter
 {
-    public const RESOURCE = 'categories';
+    public const NAME = 'category';
 
-    public function resource(): string
+    public function name(): string
     {
-        return self::RESOURCE;
+        return self::NAME;
+    }
+
+    public function apiUri(): string
+    {
+        return 'wp/v2/categories';
     }
 
     public function label(): string
@@ -42,7 +47,7 @@ class Category extends BaseImporter
         $element->slug = $data['slug'];
 
         if ($data['parent']) {
-            $element->setParentId($this->command->import(self::RESOURCE, $data['parent']));
+            $element->setParentId($this->command->import(self::NAME, $data['parent']));
         }
     }
 }

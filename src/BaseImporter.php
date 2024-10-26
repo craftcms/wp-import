@@ -30,7 +30,12 @@ abstract class BaseImporter extends BaseObject
      *
      * @return string
      */
-    abstract public function resource(): string;
+    abstract public function name(): string;
+
+    /**
+     * Returns the REST API URI for this resource.
+     */
+    abstract public function apiUri(): string;
 
     /**
      * Returns the resource label (e.g. `Posts`).

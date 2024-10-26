@@ -28,11 +28,16 @@ use yii\console\Exception;
  */
 class Media extends BaseImporter
 {
-    public const RESOURCE = 'media';
+    public const NAME = 'media';
 
-    public function resource(): string
+    public function name(): string
     {
-        return self::RESOURCE;
+        return self::NAME;
+    }
+
+    public function apiUri(): string
+    {
+        return 'wp/v2/media';
     }
 
     public function label(): string
@@ -85,7 +90,7 @@ class Media extends BaseImporter
         $element->dateCreated = DateTimeHelper::toDateTime($data['date_gmt']);
         $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
-            $element->uploaderId = $this->command->import(User::RESOURCE, $data['author']);
+            $element->uploaderId = $this->command->import(User::NAME, $data['author']);
         }
         $element->alt = $data['alt_text'];
         $element->setFieldValues([

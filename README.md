@@ -11,6 +11,7 @@ Supported content types:
 - Tags
 - Users
 - Comments (requires [Verbb Comments](https://plugins.craftcms.com/comments))
+- Custom post types
 
 Supported block types:
 
@@ -65,7 +66,11 @@ Within your WP Admin Dashboard, navigate to **Users** and press **Edit** for an 
 
 Write down the username and generated application password somewhere safe. You’ll need it when running the import.
 
-### 3. Install wp-import
+### 3. Include custom post types in the REST API
+
+If you have any custom post types you’d like to be imported, you’ll need to [register them with the REST API](https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-rest-api-support-for-custom-content-types/), by setting `'show_in_rest' => true` in the arguments passed to `register_post_type()`.
+
+### 4. Install wp-import
 
 You’ll first need to install Craft 5.5, which is still in development. To do that, change your `craftcms/cms` requirement in `composer.json` to:
 

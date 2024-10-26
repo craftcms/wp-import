@@ -30,7 +30,7 @@ class TiledGallery extends BaseBlockTransformer
         $assetIds = Collection::make($data['attrs']['ids'])
             ->map(function(int $id) {
                 try {
-                    return $this->command->import(Media::RESOURCE, $id);
+                    return $this->command->import(Media::NAME, $id);
                 } catch (Throwable) {
                     return null;
                 }

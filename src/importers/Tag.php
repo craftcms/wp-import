@@ -17,11 +17,16 @@ use craft\wpimport\generators\taggroups\Tags;
  */
 class Tag extends BaseImporter
 {
-    public const RESOURCE = 'tags';
+    public const NAME = 'tag';
 
-    public function resource(): string
+    public function name(): string
     {
-        return self::RESOURCE;
+        return self::NAME;
+    }
+
+    public function apiUri(): string
+    {
+        return 'wp/v2/tags';
     }
 
     public function label(): string

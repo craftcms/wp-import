@@ -26,7 +26,7 @@ class Cover extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        if ($entry->getTypeId() !== Post::get()->id) {
+        if (!$entry->getFieldLayout()->getFieldByhandle('coverPhoto')) {
             return '';
         }
 
@@ -40,7 +40,7 @@ class Cover extends BaseBlockTransformer
         $id = $data['attrs']['id'] ?? null;
         if ($id) {
             try {
-                $assetId = $this->command->import(Media::RESOURCE, $id);
+                $assetId = $this->command->import(Media::NAME, $id);
             } catch (Throwable) {
                 $assetId = null;
             }

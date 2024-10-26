@@ -32,7 +32,7 @@ class Video extends BaseBlockTransformer
         }
 
         try {
-            $assetId = $this->command->import(Media::RESOURCE, $id);
+            $assetId = $this->command->import(Media::NAME, $id);
         } catch (Throwable) {
             return '';
         }

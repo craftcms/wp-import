@@ -25,11 +25,16 @@ use verbb\comments\services\Comments as CommentsService;
  */
 class Comment extends BaseImporter
 {
-    public const RESOURCE = 'comments';
+    public const NAME = 'comment';
 
-    public function resource(): string
+    public function name(): string
     {
-        return self::RESOURCE;
+        return self::NAME;
+    }
+
+    public function apiUri(): string
+    {
+        return 'wp/v2/comments';
     }
 
     public function label(): string
@@ -75,13 +80,13 @@ class Comment extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var CommentElement $element */
-        $element->ownerId = $this->command->import(Post::RESOURCE, $data['post']);
+        $element->ownerId = $this->command->importPost($data['post']);
         $element->ownerSiteId = Craft::$app->sites->primarySite->id;
         $element->siteId = Craft::$app->sites->primarySite->id;
 
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
-                $element->userId = $this->command->import(User::RESOURCE, $data['author'], [
+                $element->userId = $this->command->import(User::NAME, $data['author'], [
                     'roles' => 'administrator,editor,author,contributor,viewer,subscriber',
                 ]);
             } catch (Throwable) {
@@ -106,7 +111,7 @@ class Comment extends BaseImporter
         };
 
         if ($data['parent']) {
-            $element->setParentId($this->command->import(self::RESOURCE, $data['parent']));
+            $element->setParentId($this->command->import(self::NAME, $data['parent']));
         }
     }
 }

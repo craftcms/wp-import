@@ -22,11 +22,16 @@ use craft\wpimport\generators\fields\WpId;
  */
 class User extends BaseImporter
 {
-    public const RESOURCE = 'users';
+    public const NAME = 'user';
 
-    public function resource(): string
+    public function name(): string
     {
-        return self::RESOURCE;
+        return self::NAME;
+    }
+
+    public function apiUri(): string
+    {
+        return 'wp/v2/users';
     }
 
     public function label(): string
