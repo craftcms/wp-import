@@ -14,9 +14,6 @@ use yii\console\Exception;
  */
 class UnknownBlockTypeException extends Exception
 {
-    public string $resource;
-    public int $itemId;
-
     public function __construct(
         public readonly string $blockType,
         public readonly array $data,
