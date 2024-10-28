@@ -28,6 +28,7 @@ class WpId extends BaseFieldGenerator
         $field->handle = 'wpId';
         $field->min = 1;
         $field->searchable = true;
+        $field->previewFormat = Number::FORMAT_NONE;
         return $field;
     }
 }
