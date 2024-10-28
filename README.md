@@ -145,23 +145,17 @@ The command will then begin importing your content, creating content model compo
 You can import any new content by running the command again later on. Or import just certain posts (etc.) using the `--item-id` option:
 
 ```sh
-ddev craft wp-import/posts --item-id=123,789
+ddev craft wp-import --type=post --item-id=123,789
 ```
 
 By default, any content that was already imported will be skipped. You can instead force content to be re-imported by passing the `--update` option.
 
 ```sh
-ddev craft wp-import/posts --item-id=123 --update
+ddev craft wp-import --type=post --item-id=123 --update
 ```
 
-To see a full list of available commands, run:
+To see a full list of available options, run:
 
 ```sh
 ddev craft wp-import --help
-```
-
-To see a full list of options for the `wp-imort/all` command (what `wp-import` is aliased to), run:
-
-```sh
-ddev craft wp-import/all --help
 ```
