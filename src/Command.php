@@ -17,6 +17,8 @@ use craft\elements\User;
 use craft\enums\CmsEdition;
 use craft\events\RegisterComponentTypesEvent;
 use craft\fieldlayoutelements\CustomField;
+use craft\fields\PlainText;
+use craft\helpers\ArrayHelper;
 use craft\helpers\Console;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
@@ -28,7 +30,9 @@ use craft\models\FieldLayoutTab;
 use craft\models\Section;
 use craft\models\TagGroup;
 use craft\validators\ColorValidator;
+use craft\validators\HandleValidator;
 use craft\wpimport\errors\ImportException;
+use craft\wpimport\errors\UnknownAcfFieldTypeException;
 use craft\wpimport\errors\UnknownBlockTypeException;
 use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\importers\Category;
@@ -43,6 +47,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
+use Illuminate\Support\Collection;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 use yii\base\InvalidArgumentException;
@@ -51,6 +56,7 @@ use yii\console\Exception;
 use yii\console\ExitCode;
 use yii\helpers\Inflector;
 use yii\validators\UrlValidator;
+use yii\validators\Validator;
 
 /**
  * Imports content from WordPress.
@@ -81,6 +87,29 @@ class Command extends Controller
      * ```
      */
     public const EVENT_REGISTER_BLOCK_TRANSFORMERS = 'registerBlockTransformers';
+
+    /**
+     * @event RegisterComponentTypesEvent The event that is triggered when registering ACF field adapters.
+     *
+     * Transformers must extend [[BaseAcfAdapter]].
+     * ---
+     * ```php
+     * use craft\events\RegisterComponentTypesEvent;
+     * use craft\wpimport\Command;
+     * use yii\base\Event;
+     *
+     * if (class_exists(Command::class)) {
+     *     Event::on(
+     *         Command::class,
+     *         Command::EVENT_REGISTER_ACF_ADAPTERS,
+     *         function(RegisterComponentTypesEvent $event) {
+     *             $event->types[] = MyAcfAdapter::class;
+     *         }
+     *     );
+     * }
+     * ```
+     */
+    public const EVENT_REGISTER_ACF_ADAPTERS = 'registerAcfAdapters';
 
     /**
      * @inheritdoc
@@ -151,8 +180,12 @@ class Command extends Controller
      * @var BaseBlockTransformer[]
      */
     private array $blockTransformers;
-    public bool $importComments;
+    /**
+     * @var BaseAcfAdapter[]
+     */
+    private array $acfAdapters;
 
+    public bool $importComments;
     public Client $client;
     public array $wpInfo;
     public array $taxonomyInfo;
@@ -163,6 +196,10 @@ class Command extends Controller
      * @var array<string,bool>
      */
     public array $unknownBlockTypes = [];
+    /**
+     * @var array<string,bool>
+     */
+    public array $unknownAcfFieldTypes = [];
     /**
      * @var Throwable[]
      */
@@ -204,6 +241,7 @@ class Command extends Controller
         $this->editionCheck();
         $this->loadImporters();
         $this->loadBlockTransformers();
+        $this->loadAcfAdapters();
 
         $this->taxonomyInfo = $this->get("$this->apiUrl/wp/v2/taxonomies");
 
@@ -323,46 +361,175 @@ class Command extends Controller
         return trim($html) . "\n";
     }
 
+    public function acfLayoutTabs(string $postType, FieldLayout $fieldLayout): array
+    {
+        $tabs = [];
+
+        foreach ($this->fieldGroupsForPostType($postType) as $groupData) {
+            $tabs[] = new FieldLayoutTab([
+                'layout' => $fieldLayout,
+                'name' => $groupData['title'],
+                'elements' => array_map(
+                    fn(array $fieldData) => $this->acfFieldElement($fieldData),
+                    $groupData['fields'],
+                ),
+            ]);
+        }
+
+        return $tabs;
+    }
+
+    private function fieldGroupsForPostType(string $postType): Generator
+    {
+        foreach ($this->wpInfo['field_groups'] as $groupData) {
+            if ($this->showFieldGroupForPostType($postType, $groupData)) {
+                yield $groupData;
+            }
+        }
+    }
+
+    private function showFieldGroupForPostType(string $postType, array $groupData): bool
+    {
+        foreach ($groupData['location'] as $rules) {
+            if ($this->postTypeMatchesRules($postType, $rules)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function postTypeMatchesRules(string $postType, array $rules): bool
+    {
+        foreach ($rules as $rule) {
+            if ($rule['param'] === 'post_type') {
+                if ($rule['operator'] == '==') {
+                    return $rule['value'] === $postType;
+                }
+                // !=
+                if ($rule['value'] === $postType) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public function acfFieldElement(array $fieldData): CustomField
+    {
+        // Give it a unique global handle
+        $handle = sprintf('acf_%s_%s', $fieldData['name'], $fieldData['ID']);
+        $field = Craft::$app->fields->getFieldByHandle($handle);
+
+        if (!$field) {
+            $adapter = $this->acfAdapter($fieldData);
+            $field = $adapter->create($fieldData);
+            $field->name = $fieldData['label'];
+            $field->handle = $handle;
+            $field->instructions = $fieldData['instructions'];
+
+            if (!Craft::$app->fields->saveField($field)) {
+                throw new Exception(implode(', ', $field->getFirstErrors()));
+            }
+        }
+
+        $element = new CustomField($field);
+        $element->handle = $this->normalizeAcfFieldHandle($fieldData['name']);
+        $element->required = $fieldData['required'];
+
+        if ($fieldData['wrapper']['width']) {
+            // get it to the closest 25% increment
+            $element->width = (int)(round($fieldData['wrapper']['width'] / 25) * 25);
+        }
+
+        return $element;
+    }
+
+    private function acfAdapter(array $data): BaseAcfAdapter
+    {
+        if (!isset($this->acfAdapters[$data['type']])) {
+            $this->unknownAcfFieldTypes[$data['type']] = true;
+            throw $this->errors[] = new UnknownAcfFieldTypeException($data['type'], $data);
+        }
+        return $this->acfAdapters[$data['type']];
+    }
+
+    public function normalizeAcfFieldHandle(string $handle): string
+    {
+        /** @var HandleValidator $validator */
+        $validator = Collection::make((new PlainText())->getValidators())
+            ->filter(fn(Validator $validator) => $validator instanceof HandleValidator)
+            ->first();
+
+        if (in_array($handle, [
+            'author',
+            'authorId',
+            'authorIds',
+            'authors',
+            'section',
+            'sectionId',
+            'type',
+            ...$validator->reservedWords,
+        ])) {
+            return "{$handle}_acf";
+        }
+
+        return $handle;
+    }
+
+    public function normalizeAcfFieldValue(string $postType, string $fieldName, $fieldValue): mixed
+    {
+        if ($fieldValue === '' || $fieldValue === null) {
+            return null;
+        }
+
+        foreach ($this->fieldGroupsForPostType($postType) as $groupData) {
+            foreach ($groupData['fields'] as $fieldData) {
+                if ($fieldData['name'] === $fieldName) {
+                    return $this->acfAdapter($fieldData)->normalizeValue($fieldValue, $fieldData);
+                }
+            }
+        }
+
+        return $fieldValue;
+    }
+
     private function loadImporters(): void
     {
-        $this->importers = [];
-
-        /** @var class-string<BaseImporter>[] $types */
-        $types = array_map(
-            fn(string $file) => sprintf('craft\\wpimport\\importers\\%s', pathinfo($file, PATHINFO_FILENAME)),
-            FileHelper::findFiles(__DIR__ . '/importers')
-        );
-
-        foreach ($types as $class) {
-            if ($class === PostType::class) {
-                continue;
-            }
-            $importer = new $class($this);
-            $this->importers[$importer->name()] = $importer;
-        }
-
-        foreach ($this->wpInfo['post_types'] as $data) {
-            $importer = new PostType($data, $this);
-            $this->importers[$importer->name()] = $importer;
-        }
+        $this->importers = ArrayHelper::index([
+            ...$this->loadComponents('importers', filter: fn(string $class) => $class !== PostType::class),
+            ...array_map(fn(array $data) => new PostType($data, $this), $this->wpInfo['post_types']),
+        ], fn(BaseImporter $importer) => $importer->name());
     }
 
     private function loadBlockTransformers(): void
     {
-        $this->blockTransformers = [];
+        $this->blockTransformers = ArrayHelper::index(
+            $this->loadComponents('blocktransformers', self::EVENT_REGISTER_BLOCK_TRANSFORMERS),
+            fn(BaseBlockTransformer $transformer) => $transformer::blockName(),
+        );
+    }
 
-        /** @var class-string<BaseBlockTransformer>[] $types */
+    private function loadAcfAdapters(): void
+    {
+        $this->acfAdapters = ArrayHelper::index(
+            $this->loadComponents('acfadapters', self::EVENT_REGISTER_ACF_ADAPTERS),
+            fn(BaseAcfAdapter $adapter) => $adapter::type(),
+        );
+    }
+
+    private function loadComponents(string $dir, ?string $eventName = null, ?callable $filter = null): array
+    {
         $types = array_map(
-            fn(string $file) => sprintf('craft\\wpimport\\blocktransformers\\%s', pathinfo($file, PATHINFO_FILENAME)),
-            FileHelper::findFiles(__DIR__ . '/blocktransformers')
+            fn(string $file) => sprintf('craft\\wpimport\\%s\\%s', $dir, pathinfo($file, PATHINFO_FILENAME)),
+            FileHelper::findFiles(__DIR__ . "/$dir")
         );
 
-        // Load any custom transformers from config/blocktransformers/
-        $dir = Craft::$app->path->getConfigPath() . '/blocktransformers';
+        // Load any custom components from config/wp-import/
+        $dir = Craft::$app->path->getConfigPath() . "/wp-import/$dir";
         if (is_dir($dir)) {
             $files = FileHelper::findFiles($dir);
             foreach ($files as $file) {
-                $class = sprintf('craft\\wpimport\\blocktransformers\\%s', pathinfo($file, PATHINFO_FILENAME));
+                $class = sprintf('craft\\wpimport\\%s\\%s', $dir, pathinfo($file, PATHINFO_FILENAME));
                 if (!class_exists($class, false)) {
                     require $file;
                 }
@@ -370,16 +537,21 @@ class Command extends Controller
             }
         }
 
-        $event = new RegisterComponentTypesEvent([
-            'types' => $types,
-        ]);
-        $this->trigger(self::EVENT_REGISTER_BLOCK_TRANSFORMERS, $event);
-
-        foreach ($types as $class) {
-            /** @var BaseBlockTransformer $transformer */
-            $transformer = new $class($this);
-            $this->blockTransformers[$transformer::blockName()] = $transformer;
+        if ($eventName && $this->hasEventHandlers($eventName)) {
+            $event = new RegisterComponentTypesEvent([
+                'types' => $types,
+            ]);
+            $this->trigger(self::EVENT_REGISTER_BLOCK_TRANSFORMERS, $event);
+            $types = $event->types;
         }
+
+        $components = [];
+        foreach ($types as $class) {
+            if (!$filter || $filter($class)) {
+                $components[] = new $class($this);
+            }
+        }
+        return $components;
     }
 
     private function totalItems(string $resource): int
@@ -841,7 +1013,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             });
         } catch (Throwable $e) {
             // UnknownBlockTypeException's have already been captured
-            if (!$e instanceof UnknownBlockTypeException) {
+            if (!$e instanceof UnknownBlockTypeException && !$e instanceof UnknownAcfFieldTypeException) {
                 $e = new ImportException($resource, $id, $e);
                 $this->errors[] = $e;
             }
@@ -867,7 +1039,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             $data = $this->get("$this->apiUrl/craftcms/v1/post/$data");
         }
 
-        return $this->import($data['type'], $data, $queryParams);
+        return $this->import($data['type'], $data['id'], $queryParams);
     }
 
     public function isSupported(string $resource, ?string &$reason = null): bool
@@ -977,6 +1149,14 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 $report .= "$hr";
             }
 
+            if (!empty($this->unknownAcfFieldTypes)) {
+                $report .= "The following unknown ACF field types were encountered:\n";
+                foreach (array_keys($this->unknownAcfFieldTypes) as $type) {
+                    $report .= " - $type\n";
+                }
+                $report .= "$hr";
+            }
+
             foreach ($this->errors as $i => $e) {
                 if ($i !== 0) {
                     $report .= $hr;
@@ -986,6 +1166,11 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 if ($e instanceof UnknownBlockTypeException) {
                     $report .= sprintf(
                         "Block data:\n%s\n",
+                        Json::encode($e->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                    );
+                } elseif ($e instanceof UnknownAcfFieldTypeException) {
+                    $report .= sprintf(
+                        "Field data:\n%s\n",
                         Json::encode($e->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
                     );
                 } else {

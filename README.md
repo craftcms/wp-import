@@ -48,6 +48,33 @@ Supported block types:
 - `jetpack/tiled-gallery`
 - `videopress/video`
 
+Supported ACF field types:
+
+- Text
+- Text Area
+- Number
+- Range
+- Email
+- URL
+- Image
+- File
+- WYSIWYG Editor
+- oEmbed
+- Select
+- Checkbox
+- Radio Button
+- Button Group
+- True / False
+- Link
+- Page Link
+- Relationship
+- User
+- Date Picker
+- Date Time Picker
+- Time Picker
+- Color Picker
+- Icon Picker
+
 ## Requirements
 
 Craft 5.5+ is required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) plugin. [Verbb Comments](https://plugins.craftcms.com/comments) is also required if you wish to import user comments.
@@ -70,7 +97,11 @@ Write down the username and generated application password somewhere safe. You�
 
 If you have any custom post types you’d like to be imported, you’ll need to [register them with the REST API](https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-rest-api-support-for-custom-content-types/), by setting `'show_in_rest' => true` in the arguments passed to `register_post_type()`.
 
-### 4. Install wp-import
+### 4. Include ACF fields in the REST API
+
+If you’re using Advanced Custom Fields, you’ll need to [opt into including your field groups in the REST API](https://www.advancedcustomfields.com/resources/wp-rest-api-integration/#enabling-the-rest-api-for-your-acf-fields) by enabling their “Show in REST API” setting. 
+
+### 5. Install wp-import
 
 You’ll first need to install Craft 5.5, which is still in development. To do that, change your `craftcms/cms` requirement in `composer.json` to:
 

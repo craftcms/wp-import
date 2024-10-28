@@ -143,6 +143,14 @@ class PostType extends BaseImporter
             ];
         }
 
+        if (!empty($data['acf'])) {
+            foreach ($data['acf'] as $fieldName => $value) {
+                $normalizedHandle = $this->command->normalizeAcfFieldHandle($fieldName);
+                $value = $this->command->normalizeAcfFieldValue($this->name(), $fieldName, $value);
+                $fieldValues[$normalizedHandle] = $value;
+            }
+        }
+
         foreach ($fieldValues as $handle => $value) {
             try {
                 $element->setFieldValue($handle, $value);
@@ -239,6 +247,7 @@ class PostType extends BaseImporter
                     ]),
                 ],
             ]),
+            ...$this->command->acfLayoutTabs($this->name(), $fieldLayout),
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
                 'name' => 'Meta',

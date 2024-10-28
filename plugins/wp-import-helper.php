@@ -42,8 +42,17 @@ add_action('rest_api_init', function() {
             'post_types' => array_map(fn(WP_Post_Type $postType) => array_merge($toArray($postType), [
                 'supports' => get_all_post_type_supports($postType->name),
             ]), $postTypes),
+            'field_groups' => function_exists('acf_get_field_groups')
+                ? array_map(function(array $fieldGroup) {
+                    $fieldGroup['fields'] = acf_get_fields($fieldGroup);
+                    return $fieldGroup;
+                }, acf_get_field_groups())
+                : [],
             'permalink_structure' => get_option('permalink_structure'),
             'color_palette' => wp_get_global_settings(['color', 'palette']),
+            'wysiwyg_toolbars' => class_exists('acf_field_wysiwyg')
+                ? (new acf_field_wysiwyg())->get_toolbars()
+                : [],
         ],
         'permission_callback' => fn() => current_user_can('manage_options'),
     ]);
@@ -51,7 +60,7 @@ add_action('rest_api_init', function() {
     // h/t https://wordpress.stackexchange.com/a/406877
     register_rest_route('craftcms/v1', 'post/(?P<id>\d+)', [
         'methods' => WP_REST_Server::READABLE,
-        'callback' => function(WP_REST_Request $request) {
+        'callback' => function(WP_REST_Request $request) use ($toArray) {
             $id = (int)$request['id'];
             $post = get_post($id);
             $post_type = get_post_type($post);
