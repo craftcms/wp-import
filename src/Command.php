@@ -369,10 +369,11 @@ class Command extends Controller
             $tabs[] = new FieldLayoutTab([
                 'layout' => $fieldLayout,
                 'name' => $groupData['title'],
-                'elements' => array_map(
-                    fn(array $fieldData) => $this->acfFieldElement($fieldData),
-                    $groupData['fields'],
-                ),
+                'elements' => Collection::make($groupData['fields'])
+                    ->filter(fn(array $fieldData) => !empty($fieldData['name']))
+                    ->values()
+                    ->map(fn(array $fieldData) => $this->acfFieldElement($fieldData))
+                    ->all(),
             ]);
         }
 
@@ -423,7 +424,7 @@ class Command extends Controller
         if (!$field) {
             $adapter = $this->acfAdapter($fieldData);
             $field = $adapter->create($fieldData);
-            $field->name = $fieldData['label'];
+            $field->name = $fieldData['label'] ?: "Untitled ACF Field {$fieldData['ID']}";
             $field->handle = $handle;
             $field->instructions = $fieldData['instructions'];
 
