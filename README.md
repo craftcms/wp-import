@@ -1,79 +1,22 @@
 # wp-import
 
-Prepares a content model and imports WordPress content into Craft CMS.
+Import all your WordPress content, media, and users into Craft CMS with a single CLI command.
 
-Supported content types:
+## WordPress Feature Support
 
-- Posts
-- Pages
-- Media
-- Categories
-- Tags
-- Users
-- Comments (requires [Verbb Comments](https://plugins.craftcms.com/comments))
-- Custom post types
-
-Supported block types:
-
-- `core/audio`
-- `core/block`
-- `core/button`
-- `core/buttons`
-- `core/code`
-- `core/column`
-- `core/columns`
-- `core/cover`
-- `core/details`
-- `core/embed`
-- `core/gallery`
-- `core/group`
-- `core/heading`
-- `core/html`
-- `core/image`
-- `core/list-item`
-- `core/list`
-- `core/more`
-- `core/paragraph`
-- `core/preformatted`
-- `core/quote`
-- `core/separator`
-- `core/table`
-- `core/video`
-- `core-embed/twitter`
-- `core-embed/vimeo`
-- `core-embed/youtube`
-- `cp/codepen-gutenberg-embed-block`
-- `dsb/details-summary-block`
-- `jetpack/slideshow`
-- `jetpack/tiled-gallery`
-- `videopress/video`
-
-Supported ACF field types:
-
-- Text
-- Text Area
-- Number
-- Range
-- Email
-- URL
-- Image
-- File
-- WYSIWYG Editor
-- oEmbed
-- Select
-- Checkbox
-- Radio Button
-- Button Group
-- True / False
-- Link
-- Page Link
-- Relationship
-- User
-- Date Picker
-- Date Time Picker
-- Time Picker
-- Color Picker
-- Icon Picker
+Feature | Support
+------- | ---------
+Posts | ✅
+Pages | ✅
+Media | ✅
+Categories | ✅
+Tags | ✅
+Users | ✅
+Comments | ✅ (requires [Verbb Comments](https://plugins.craftcms.com/comments))
+Gutenberg | ✅ (see [Supported Block Types](#supported-block-types))
+Custom post types | ✅
+ACF Fields | ✅ (see [Supported ACF Fields](#supported-acf-fields))
+Custom taxonomies | ❌ Not yet
 
 ## Requirements
 
@@ -159,3 +102,71 @@ To see a full list of available options, run:
 ```sh
 ddev craft wp-import --help
 ```
+
+---
+
+## Supported Block Types
+
+- `core/audio`
+- `core/block`
+- `core/button`
+- `core/buttons`
+- `core/code`
+- `core/column`
+- `core/columns`
+- `core/cover`
+- `core/details`
+- `core/embed`
+- `core/gallery`
+- `core/group`
+- `core/heading`
+- `core/html`
+- `core/image`
+- `core/list-item`
+- `core/list`
+- `core/more`
+- `core/paragraph`
+- `core/preformatted`
+- `core/quote`
+- `core/separator`
+- `core/table`
+- `core/video`
+- `core-embed/twitter`
+- `core-embed/vimeo`
+- `core-embed/youtube`
+- `cp/codepen-gutenberg-embed-block`
+- `dsb/details-summary-block`
+- `jetpack/slideshow`
+- `jetpack/tiled-gallery`
+- `videopress/video`
+
+## Supported ACF Fields:
+
+- Text
+- Text Area
+- Number
+- Range
+- Email
+- URL
+- Image
+- File
+- WYSIWYG Editor
+- oEmbed
+- Select
+- Checkbox
+- Radio Button
+- Button Group
+- True / False
+- Link
+- Page Link
+- Relationship
+- User
+- Date Picker
+- Date Time Picker
+- Time Picker
+- Color Picker
+- Icon Picker
+
+## We’re Here to Help
+
+If you have any questions or suggestions, you can reach us at [support@craftcms.com](mailto:support@craftcms.com) or [post a GitHub issue](https://github.com/craftcms/wp-import/issues). We’ll do what we can to get you up and running with Craft!
