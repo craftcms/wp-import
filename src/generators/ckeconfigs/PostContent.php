@@ -27,7 +27,7 @@ class PostContent extends BaseCkeConfigGenerator
             'heading', '|',
             'bold', 'italic', 'link', '|',
             'blockQuote', 'bulletedList', 'numberedList', 'codeBlock', '|',
-            'insertTable', 'mediaEmbed', 'htmlEmbed', 'pageBreak', '|',
+            'insertTable', 'mediaEmbed', 'htmlEmbed', 'horizontalLine', 'pageBreak', '|',
             'createEntry', 'sourceEditing',
         ];
     }
