@@ -622,7 +622,7 @@ MD) . "\n\n");
         if (isset($this->apiUrl)) {
             $this->apiUrl = $this->normalizeApiUrl($this->apiUrl);
         } else {
-            $this->apiUrl = $this->normalizeApiUrl($this->prompt('REST API URL:', [
+            $this->apiUrl = $this->normalizeApiUrl($this->prompt('WordPress site URL:', [
                 'required' => true,
                 'validator' => function($value, &$error) {
                     $value = $this->normalizeApiUrl($value);
@@ -684,6 +684,8 @@ MD) . "\n\n");
         $url = StringHelper::removeRight($url, '/');
         $url = StringHelper::removeRight($url, '/v2');
         $url = StringHelper::removeRight($url, '/wp');
+        $url = StringHelper::removeRight($url, '/wp-admin');
+        $url = StringHelper::ensureRight($url, '/wp-json');
         return $url;
     }
 

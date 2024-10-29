@@ -133,7 +133,7 @@ Run the following CLI command to initiate the import:
 ddev craft wp-import
 ```
 
-You’ll be prompted for your REST API URL, which should be something like `https://example.com/wp-json`. You’ll also need to provide the username and application password you wrote down earlier.
+You’ll be prompted for your WordPress site URL, as well as the username and application password you wrote down earlier.
 
 The command will then begin importing your content, creating content model components as needed, such as:
 
