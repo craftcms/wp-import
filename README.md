@@ -103,8 +103,6 @@ To see a full list of available options, run:
 ddev craft wp-import --help
 ```
 
----
-
 ## Supported Block Types
 
 - `core/audio`
