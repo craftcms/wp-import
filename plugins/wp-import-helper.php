@@ -36,6 +36,13 @@ add_action('rest_api_init', function() {
         ]);
     }
 
+    register_rest_route('craftcms/v1', 'ping', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => fn() => [
+            'pong' => true,
+        ],
+    ]);
+
     register_rest_route('craftcms/v1', 'info', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => fn() => [

@@ -621,7 +621,6 @@ MD) . "\n\n");
     {
         if (isset($this->apiUrl)) {
             $this->apiUrl = $this->normalizeApiUrl($this->apiUrl);
-            $this->wpInfo = $this->get("$this->apiUrl/craftcms/v1/info");
         } else {
             $this->apiUrl = $this->normalizeApiUrl($this->prompt('REST API URL:', [
                 'required' => true,
@@ -632,7 +631,7 @@ MD) . "\n\n");
                     }
 
                     try {
-                        $this->wpInfo = $this->get("$value/craftcms/v1/info");
+                        $this->get("$value/craftcms/v1/ping");
                     } catch (Throwable $e) {
                         if ($e instanceof ClientException && $e->getResponse()->getStatusCode() === 404) {
                             $error = $this->markdownToAnsi('The `wp-import Helper` WordPress plugin doesn’t appear to be installed.');
@@ -676,6 +675,8 @@ MD) . "\n\n");
                 goto getCredentials;
             }
         }
+
+        $this->wpInfo = $this->get("$this->apiUrl/craftcms/v1/info");
     }
 
     private function normalizeApiUrl(string $url): string
