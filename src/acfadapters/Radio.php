@@ -37,6 +37,7 @@ class Radio extends BaseAcfAdapter
                     : $value === $data['default_value']
             ];
         }
+        $field->customOptions = (bool)$data['other_choice'];
         return $field;
     }
 }
