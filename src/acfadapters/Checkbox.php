@@ -36,7 +36,7 @@ class Checkbox extends BaseAcfAdapter
                     : $value === $data['default_value']
             ];
         }
-        $field->customOption = (bool)$data['allow_custom'];
+        $field->customOptions = (bool)$data['allow_custom'];
         return $field;
     }
 }
