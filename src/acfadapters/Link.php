@@ -29,11 +29,18 @@ class Link extends BaseAcfAdapter
     {
         $field = new LinkField();
         $field->types = [Url::id(), Entry::id()];
+        $field->showLabelField = true;
+        $field->showTargetField = true;
         return $field;
     }
 
     public function normalizeValue(mixed $value, array $data): mixed
     {
-        return $value['url'];
+        return [
+            'value' => $value['url'],
+            'type' => Url::id(),
+            'label' => $value['title'],
+            'target' => $value['target'],
+        ];
     }
 }
