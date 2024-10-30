@@ -40,7 +40,7 @@ class Link extends BaseAcfAdapter
             'value' => $value['url'],
             'type' => Url::id(),
             'label' => $value['title'],
-            'target' => $value['target'],
+            'target' => $value['target'] ?: null,
         ];
     }
 }
