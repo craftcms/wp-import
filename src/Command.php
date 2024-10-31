@@ -318,6 +318,8 @@ class Command extends Controller
         } finally {
             if (isset($transaction)) {
                 $transaction->rollBack();
+                // prevent project config changes from persisting
+                Craft::$app->projectConfig->reset();
             }
         }
 
