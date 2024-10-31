@@ -63,7 +63,7 @@ class Wysiwyg extends BaseAcfAdapter
         foreach ($this->command->wpInfo['wysiwyg_toolbars'][$toolbarName] as $row) {
             $rowButtons = [];
             foreach ($row as $button) {
-                $ckeButton = match($button) {
+                $ckeButton = match ($button) {
                     'formatselect' => 'heading',
                     'bold' => 'bold',
                     'italic' => 'italic',

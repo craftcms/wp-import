@@ -12,7 +12,6 @@ use craft\fields\Assets;
 use craft\wpimport\BaseAcfAdapter;
 use craft\wpimport\generators\volumes\Uploads;
 use craft\wpimport\importers\Media;
-use craft\wpimport\importers\User as UserImporter;
 
 /**
  * Base block transformer class

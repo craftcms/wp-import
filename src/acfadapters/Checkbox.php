@@ -33,7 +33,7 @@ class Checkbox extends BaseAcfAdapter
                 'value' => $value,
                 'default' => is_array($data['default_value'])
                     ? in_array($value, $data['default_value'])
-                    : $value === $data['default_value']
+                    : $value === $data['default_value'],
             ];
         }
         $field->customOptions = (bool)$data['allow_custom'];

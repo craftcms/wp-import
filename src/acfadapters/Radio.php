@@ -8,7 +8,6 @@
 namespace craft\wpimport\acfadapters;
 
 use craft\base\FieldInterface;
-use craft\fields\Checkboxes as CheckboxesField;
 use craft\fields\RadioButtons;
 use craft\wpimport\BaseAcfAdapter;
 
@@ -34,7 +33,7 @@ class Radio extends BaseAcfAdapter
                 'value' => $value,
                 'default' => is_array($data['default_value'])
                     ? in_array($value, $data['default_value'])
-                    : $value === $data['default_value']
+                    : $value === $data['default_value'],
             ];
         }
         $field->customOptions = (bool)$data['other_choice'];

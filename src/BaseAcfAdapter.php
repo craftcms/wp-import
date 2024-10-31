@@ -7,7 +7,6 @@
 
 namespace craft\wpimport;
 
-use Craft;
 use craft\base\FieldInterface;
 use yii\base\BaseObject;
 

@@ -8,10 +8,6 @@
 namespace craft\wpimport\acfadapters;
 
 use craft\base\FieldInterface;
-use craft\fields\Checkboxes as CheckboxesField;
-use craft\fields\Dropdown;
-use craft\fields\Entries;
-use craft\fields\RadioButtons;
 use craft\fields\Users;
 use craft\wpimport\BaseAcfAdapter;
 use craft\wpimport\importers\User as UserImporter;

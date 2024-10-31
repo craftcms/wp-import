@@ -11,7 +11,6 @@ use craft\base\FieldInterface;
 use craft\fields\Dropdown;
 use craft\fields\MultiSelect;
 use craft\wpimport\BaseAcfAdapter;
-use DateTime;
 
 /**
  * Base block transformer class
@@ -35,7 +34,7 @@ class Select extends BaseAcfAdapter
                 'value' => $value,
                 'default' => is_array($data['default_value'])
                     ? in_array($value, $data['default_value'])
-                    : $value === $data['default_value']
+                    : $value === $data['default_value'],
             ];
         }
         return $field;

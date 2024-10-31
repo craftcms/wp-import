@@ -1224,7 +1224,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
     public function normalizeIcon(?string $icon): ?string
     {
-        return match($icon) {
+        return match ($icon) {
             'dashicons-admin-appearance' => 'paintbrush',
             'dashicons-admin-collapse' => 'circle-caret-left',
             'dashicons-admin-comments' => 'comment',
