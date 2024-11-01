@@ -46,9 +46,6 @@ add_action('rest_api_init', function() {
     register_rest_route('craftcms/v1', 'info', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => fn() => [
-            'post_types' => array_map(fn(WP_Post_Type $postType) => array_merge($toArray($postType), [
-                'supports' => get_all_post_type_supports($postType->name),
-            ]), $postTypes),
             'field_groups' => function_exists('acf_get_field_groups')
                 ? array_map(function(array $fieldGroup) {
                     $fieldGroup['fields'] = acf_get_fields($fieldGroup);

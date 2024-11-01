@@ -35,12 +35,11 @@ use craft\wpimport\errors\ImportException;
 use craft\wpimport\errors\UnknownAcfFieldTypeException;
 use craft\wpimport\errors\UnknownBlockTypeException;
 use craft\wpimport\generators\fields\WpId;
-use craft\wpimport\importers\Category;
 use craft\wpimport\importers\Comment;
 use craft\wpimport\importers\Comment as CommentImporter;
 use craft\wpimport\importers\Media;
 use craft\wpimport\importers\PostType;
-use craft\wpimport\importers\Tag;
+use craft\wpimport\importers\Taxonomy;
 use craft\wpimport\importers\User as UserImporter;
 use Generator;
 use GuzzleHttp\Client;
@@ -132,8 +131,8 @@ class Command extends Controller
     public ?string $password = null;
 
     /**
-     * @var string[] The types of items to import (`posts`, `pages`, `media`,
-     *  `categories`, `tags`, `users`, `comments`, or a custom post type name)
+     * @var string[] The types of items to import (`post`, `page`, `media`,
+     * `category`, `tag`, `user`, `comment`, or a custom post type/taxonomy name)
      */
     public array $type = [];
 
@@ -175,7 +174,7 @@ class Command extends Controller
     /**
      * @var BaseImporter[]
      */
-    private array $importers;
+    public array $importers;
     /**
      * @var BaseBlockTransformer[]
      */
@@ -188,7 +187,6 @@ class Command extends Controller
     public bool $importComments;
     public Client $client;
     public array $wpInfo;
-    public array $taxonomyInfo;
     private array $idMap = [];
     private int $importTotal = 0;
 
@@ -243,22 +241,18 @@ class Command extends Controller
         $this->loadBlockTransformers();
         $this->loadAcfAdapters();
 
-        $this->taxonomyInfo = $this->get("$this->apiUrl/wp/v2/taxonomies");
-
         if (!empty($this->type)) {
             $resources = $this->type;
         } else {
             // Use this specific order so we don't need to do as many one-off item imports
             $resources = [
-                UserImporter::NAME,
-                Media::NAME,
-                Category::NAME,
-                Tag::NAME,
-                CommentImporter::NAME,
+                UserImporter::SLUG,
+                Media::SLUG,
+                CommentImporter::SLUG,
             ];
             // Add in any custom post types
             foreach ($this->importers as $importer) {
-                $resource = $importer->name();
+                $resource = $importer->slug();
                 if (!in_array($resource, $resources)) {
                     $resources[] = $resource;
                 }
@@ -363,11 +357,11 @@ class Command extends Controller
         return trim($html) . "\n";
     }
 
-    public function acfLayoutTabs(string $postType, FieldLayout $fieldLayout): array
+    public function acfLayoutTabsForEntity(string $type, string $name, FieldLayout $fieldLayout): array
     {
         $tabs = [];
 
-        foreach ($this->fieldGroupsForPostType($postType) as $groupData) {
+        foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
             $tabs[] = new FieldLayoutTab([
                 'layout' => $fieldLayout,
                 'name' => $groupData['title'],
@@ -382,30 +376,30 @@ class Command extends Controller
         return $tabs;
     }
 
-    private function fieldGroupsForPostType(string $postType): Generator
+    private function fieldGroupsForEntity(string $type, string $name): Generator
     {
         foreach ($this->wpInfo['field_groups'] as $groupData) {
-            if ($this->showFieldGroupForPostType($postType, $groupData)) {
+            if ($this->showFieldGroupForEntity($type, $name, $groupData)) {
                 yield $groupData;
             }
         }
     }
 
-    private function showFieldGroupForPostType(string $postType, array $groupData): bool
+    private function showFieldGroupForEntity(string $type, string $name, array $groupData): bool
     {
         foreach ($groupData['location'] as $rules) {
-            if ($this->postTypeMatchesRules($postType, $rules)) {
+            if ($this->locationMatchesRules($type, $name, $rules)) {
                 return true;
             }
         }
         return false;
     }
 
-    private function postTypeMatchesRules(string $postType, array $rules): bool
+    private function locationMatchesRules(string $type, string $name, array $rules): bool
     {
         foreach ($rules as $rule) {
-            if ($rule['param'] === 'post_type') {
-                $result = in_array($rule['value'], [$postType, 'all']);
+            if ($rule['param'] === $type) {
+                $result = in_array($rule['value'], [$name, 'all']);
                 return $rule['operator'] === '!=' ? !$result : $result;
             }
         }
@@ -463,6 +457,7 @@ class Command extends Controller
             'authorId',
             'authorIds',
             'authors',
+            'group',
             'section',
             'sectionId',
             'type',
@@ -474,13 +469,13 @@ class Command extends Controller
         return $handle;
     }
 
-    public function normalizeAcfFieldValue(string $postType, string $fieldName, $fieldValue): mixed
+    public function normalizeAcfFieldValue(string $type, string $name, string $fieldName, $fieldValue): mixed
     {
         if ($fieldValue === '' || $fieldValue === null) {
             return null;
         }
 
-        foreach ($this->fieldGroupsForPostType($postType) as $groupData) {
+        foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
             foreach ($groupData['fields'] as $fieldData) {
                 if ($fieldData['name'] === $fieldName) {
                     return $this->acfAdapter($fieldData)->normalizeValue($fieldValue, $fieldData);
@@ -493,10 +488,39 @@ class Command extends Controller
 
     private function loadImporters(): void
     {
+        $taxonomies = $postTypes = null;
+
+        $this->do('Loading taxonomies', function() use (&$taxonomies) {
+            $taxonomies = Collection::make($this->get("$this->apiUrl/wp/v2/taxonomies", [
+                'context' => 'edit',
+            ]))
+                ->filter(fn($data, $key) => (
+                    !in_array($key, ['post_tag', 'nav_menu']) &&
+                    !str_starts_with($key, 'wp_')
+                ))
+                ->all();
+        });
+
+        $this->do('Loading post types', function() use (&$postTypes) {
+            $postTypes = Collection::make($this->get("$this->apiUrl/wp/v2/types", [
+                'context' => 'edit',
+            ]))
+                ->filter(fn($data, $key) => (
+                    !in_array($key, ['attachment', 'nav_menu_item']) &&
+                    !str_starts_with($key, 'wp_') &&
+                    !str_starts_with($key, 'jp_')
+                ))
+                ->all();
+        });
+
         $this->importers = ArrayHelper::index([
-            ...$this->loadComponents('importers', filter: fn(string $class) => $class !== PostType::class),
-            ...array_map(fn(array $data) => new PostType($data, $this), $this->wpInfo['post_types']),
-        ], fn(BaseImporter $importer) => $importer->name());
+            ...$this->loadComponents(
+                'importers',
+                filter: fn(string $class) => !in_array($class, [PostType::class, Taxonomy::class]),
+            ),
+            ...array_map(fn(array $data) => new Taxonomy($data, $this), $taxonomies),
+            ...array_map(fn(array $data) => new PostType($data, $this), $postTypes),
+        ], fn(BaseImporter $importer) => $importer->slug());
     }
 
     private function loadBlockTransformers(): void
@@ -588,7 +612,7 @@ MD) . "\n\n");
             $this->stdout("\n");
         }
 
-        if ($this->interactive && (empty($this->type) || in_array(Comment::NAME, $this->type))) {
+        if ($this->interactive && (empty($this->type) || in_array(Comment::SLUG, $this->type))) {
             if (!Craft::$app->plugins->isPluginInstalled('comments')) {
                 $this->note($this->markdownToAnsi(<<<MD
 The Comments plugin (by Verbb) must be installed if you wish to import comments.
@@ -698,7 +722,7 @@ MD) . "\n\n");
             return;
         }
 
-        $totalWpUsers = $this->totalItems(UserImporter::NAME);
+        $totalWpUsers = $this->totalItems(UserImporter::SLUG);
         if ($totalWpUsers === 1) {
             return;
         }
@@ -981,7 +1005,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 Console::indent();
                 try {
                     if (is_int($data)) {
-                        $data = $this->item($importer->name(), $data, $queryParams);
+                        $data = $this->item($importer->slug(), $data, $queryParams);
                     }
 
                     $element ??= $importer->find($data) ?? new $elementType();
@@ -1031,9 +1055,9 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
     {
         if (is_int($data)) {
             // Did we already import this item in the same request?
-            foreach ($this->wpInfo['post_types'] as $postType) {
-                if (isset($this->idMap[$postType['name']][$data])) {
-                    return $this->idMap[$postType['name']][$data];
+            foreach ($this->importers as $importer) {
+                if (isset($this->idMap[$importer->slug()][$data])) {
+                    return $this->idMap[$importer->slug()][$data];
                 }
             }
 

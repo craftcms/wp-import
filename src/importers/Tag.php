@@ -17,11 +17,11 @@ use craft\wpimport\generators\taggroups\Tags;
  */
 class Tag extends BaseImporter
 {
-    public const NAME = 'tag';
+    public const SLUG = 'tag';
 
-    public function name(): string
+    public function slug(): string
     {
-        return self::NAME;
+        return self::SLUG;
     }
 
     public function apiUri(): string

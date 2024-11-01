@@ -15,8 +15,8 @@ Users | ✅
 Comments | ✅ (requires [Verbb Comments](https://plugins.craftcms.com/comments))
 Gutenberg | ✅ (see [Supported Block Types](#supported-block-types))
 Custom post types | ✅
+Custom taxonomies | ✅
 ACF Fields | ✅ (see [Supported ACF Fields](#supported-acf-fields))
-Custom taxonomies | ❌ Not yet
 
 ## Requirements
 

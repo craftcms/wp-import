@@ -30,7 +30,7 @@ class Slideshow extends BaseBlockTransformer
         $assetIds = Collection::make($data['attrs']['ids'])
             ->map(function(int $id) {
                 try {
-                    return $this->command->import(Media::NAME, $id);
+                    return $this->command->import(Media::SLUG, $id);
                 } catch (Throwable) {
                     return null;
                 }

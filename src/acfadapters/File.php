@@ -68,7 +68,7 @@ class File extends BaseAcfAdapter
     public function normalizeValue(mixed $value, array $data): mixed
     {
         return array_map(
-            fn(int $id) => $this->command->import(Media::NAME, $id),
+            fn(int $id) => $this->command->import(Media::SLUG, $id),
             (array)$value,
         );
     }

@@ -25,11 +25,11 @@ use verbb\comments\services\Comments as CommentsService;
  */
 class Comment extends BaseImporter
 {
-    public const NAME = 'comment';
+    public const SLUG = 'comment';
 
-    public function name(): string
+    public function slug(): string
     {
-        return self::NAME;
+        return self::SLUG;
     }
 
     public function apiUri(): string
@@ -86,7 +86,7 @@ class Comment extends BaseImporter
 
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
-                $element->userId = $this->command->import(User::NAME, $data['author'], [
+                $element->userId = $this->command->import(User::SLUG, $data['author'], [
                     'roles' => 'administrator,editor,author,contributor,viewer,subscriber',
                 ]);
             } catch (Throwable) {
@@ -111,7 +111,7 @@ class Comment extends BaseImporter
         };
 
         if ($data['parent']) {
-            $element->setParentId($this->command->import(self::NAME, $data['parent']));
+            $element->setParentId($this->command->import(self::SLUG, $data['parent']));
         }
     }
 }

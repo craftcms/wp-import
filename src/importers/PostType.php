@@ -27,7 +27,6 @@ use craft\models\Section_SiteSettings;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Caption;
-use craft\wpimport\generators\fields\Categories;
 use craft\wpimport\generators\fields\Color as ColorField;
 use craft\wpimport\generators\fields\Comments;
 use craft\wpimport\generators\fields\Description;
@@ -54,9 +53,9 @@ class PostType extends BaseImporter
         parent::__construct($command, $config);
     }
 
-    public function name(): string
+    public function slug(): string
     {
-        return $this->data['name'];
+        return $this->data['slug'];
     }
 
     public function apiUri(): string
@@ -86,26 +85,20 @@ class PostType extends BaseImporter
         return Entry::class;
     }
 
-    public function prep(): void
-    {
-        $this->entryType = $this->entryType();
-        $this->section = $this->section();
-    }
-
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var Entry $element */
-        $element->sectionId = $this->section->id;
-        $element->setTypeId($this->entryType->id);
+        $element->sectionId = $this->section()->id;
+        $element->setTypeId($this->entryType()->id);
 
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
         } elseif (!empty($data['author'])) {
-            $element->setAuthorId($this->command->import(User::NAME, $data['author']));
+            $element->setAuthorId($this->command->import(User::SLUG, $data['author']));
         }
 
-        if ($this->section->type === Section::TYPE_STRUCTURE && $data['parent']) {
-            $element->setParentId($this->command->import($this->name(), $data['parent']));
+        if ($this->section()->type === Section::TYPE_STRUCTURE && $data['parent']) {
+            $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
         $element->title = ($data['title']['raw'] ?? null) ?: null;
@@ -126,14 +119,11 @@ class PostType extends BaseImporter
         if (!$this->hierarchical()) {
             $fieldValues[Sticky::get()->handle] = $data['sticky'] ?? false;
         }
-        if ($this->hasTaxonomy('category')) {
-            $fieldValues[Categories::get()->handle] = array_map(fn(int $id) => $this->command->import(Category::NAME, $id), $data['categories']);
-        }
         if ($this->hasTaxonomy('post_tag')) {
-            $fieldValues[Tags::get()->handle] = array_map(fn(int $id) => $this->command->import(Tag::NAME, $id), $data['tags']);
+            $fieldValues[Tags::get()->handle] = array_map(fn(int $id) => $this->command->import(Tag::SLUG, $id), $data['tags']);
         }
         if ($data['featured_media'] ?? null) {
-            $fieldValues['featuredImage'] = $this->command->import(Media::NAME, $data['featured_media']);
+            $fieldValues['featuredImage'] = $this->command->import(Media::SLUG, $data['featured_media']);
         }
         if ($this->supports('comments') && $this->command->importComments) {
             $fieldValues[Comments::get()->handle] = [
@@ -141,10 +131,26 @@ class PostType extends BaseImporter
             ];
         }
 
+        foreach ($this->data['taxonomies'] as $taxonomy) {
+            if ($taxonomy === 'post_tag') {
+                continue;
+            }
+
+            /** @var Taxonomy $importer */
+            $importer = $this->command->importers[$taxonomy];
+            $fieldValues[$importer->field()->handle] = array_map(
+                fn(int $id) => $this->command->import($importer->slug(), $id),
+                match($taxonomy) {
+                    'category' => $data['categories'],
+                    default => $data[$taxonomy],
+                },
+            );
+        }
+
         if (!empty($data['acf'])) {
             foreach ($data['acf'] as $fieldName => $value) {
                 $normalizedHandle = $this->command->normalizeAcfFieldHandle($fieldName);
-                $value = $this->command->normalizeAcfFieldValue($this->name(), $fieldName, $value);
+                $value = $this->command->normalizeAcfFieldValue('post_type', $this->slug(), $fieldName, $value);
                 $fieldValues[$normalizedHandle] = $value;
             }
         }
@@ -170,16 +176,20 @@ class PostType extends BaseImporter
 
     private function entryType(): EntryType
     {
+        if (isset($this->entryType)) {
+            return $this->entryType;
+        }
+
         $entryTypeHandle = StringHelper::toHandle($this->data['labels']['singular_name']);
         $entryType = Craft::$app->entries->getEntryTypeByHandle($entryTypeHandle);
         if ($entryType) {
-            return $entryType;
+            return $this->entryType = $entryType;
         }
 
         $entryType = new EntryType();
         $entryType->name = $this->data['labels']['singular_name'];
         $entryType->handle = $entryTypeHandle;
-        $entryType->icon = $this->command->normalizeIcon($this->data['menu_icon']) ?? 'pen-nib';
+        $entryType->icon = $this->command->normalizeIcon($this->data['icon']) ?? 'pen-nib';
         $entryType->color = Color::Blue;
 
         $fieldLayout = new FieldLayout();
@@ -214,9 +224,17 @@ class PostType extends BaseImporter
         if (!$this->hierarchical()) {
             $metaElements[] = new CustomField(Sticky::get());
         }
-        if ($this->hasTaxonomy('category')) {
-            $metaElements[] = new CustomField(Categories::get());
+
+        foreach ($this->data['taxonomies'] as $taxonomy) {
+            if ($taxonomy === 'post_tag') {
+                continue;
+            }
+
+            /** @var Taxonomy $importer */
+            $importer = $this->command->importers[$taxonomy];
+            $metaElements[] = new Customfield($importer->field());
         }
+
         if ($this->hasTaxonomy('post_tag')) {
             $metaElements[] = new CustomField(Tags::get());
         }
@@ -245,7 +263,7 @@ class PostType extends BaseImporter
                     ]),
                 ],
             ]),
-            ...$this->command->acfLayoutTabs($this->name(), $fieldLayout),
+            ...$this->command->acfLayoutTabsForEntity('post_type', $this->slug(), $fieldLayout),
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
                 'name' => 'Meta',
@@ -268,15 +286,19 @@ class PostType extends BaseImporter
             }
         });
 
-        return $entryType;
+        return $this->entryType = $entryType;
     }
 
     private function section(): Section
     {
+        if (isset($this->section)) {
+            return $this->section;
+        }
+
         $sectionHandle = StringHelper::toHandle($this->label());
         $section = Craft::$app->entries->getSectionByHandle($sectionHandle);
         if ($section) {
-            return $section;
+            return $this->section = $section;
         }
 
         $section = new Section();
@@ -284,7 +306,7 @@ class PostType extends BaseImporter
         $section->handle = $sectionHandle;
         $section->type = $this->hierarchical() ? Section::TYPE_STRUCTURE : Section::TYPE_CHANNEL;
         $section->enableVersioning = $this->supports('revisions');
-        $section->setEntryTypes([$this->entryType]);
+        $section->setEntryTypes([$this->entryType()]);
         $section->setSiteSettings([
             new Section_SiteSettings([
                 'siteId' => Craft::$app->sites->getPrimarySite()->id,
@@ -319,7 +341,7 @@ class PostType extends BaseImporter
             }
         });
 
-        return $section;
+        return $this->section = $section;
     }
 
     private function hierarchical(): bool
@@ -334,6 +356,6 @@ class PostType extends BaseImporter
 
     private function hasTaxonomy(string $name): bool
     {
-        return in_array($this->data['name'], $this->command->taxonomyInfo[$name]['types'] ?? []);
+        return in_array($name, $this->data['taxonomies']);
     }
 }

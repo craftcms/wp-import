@@ -36,7 +36,7 @@ class User extends BaseAcfAdapter
     public function normalizeValue(mixed $value, array $data): mixed
     {
         return array_map(
-            fn(int $id) => $this->command->import(UserImporter::NAME, $id),
+            fn(int $id) => $this->command->import(UserImporter::SLUG, $id),
             (array)$value,
         );
     }
