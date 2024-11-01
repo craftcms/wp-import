@@ -42,8 +42,6 @@ use Throwable;
 use yii\console\Exception;
 
 /**
- * Base importer class for Posts, Pages, and custom post types
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class PostType extends BaseImporter
