@@ -405,16 +405,11 @@ class Command extends Controller
     {
         foreach ($rules as $rule) {
             if ($rule['param'] === 'post_type') {
-                if ($rule['operator'] == '==') {
-                    return $rule['value'] === $postType;
-                }
-                // !=
-                if ($rule['value'] === $postType) {
-                    return false;
-                }
+                $result = in_array($rule['value'], [$postType, 'all']);
+                return $rule['operator'] === '!=' ? !$result : $result;
             }
         }
-        return true;
+        return false;
     }
 
     public function acfFieldElement(array $fieldData): CustomField
