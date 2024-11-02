@@ -52,7 +52,7 @@ class Taxonomy extends BaseAcfAdapter
 
     public function normalizeValue(mixed $value, array $data): mixed
     {
-        $slug = match($data['taxonomy']) {
+        $slug = match ($data['taxonomy']) {
             'post_tag' => Tag::SLUG,
             default => $data['taxonomy'],
         };

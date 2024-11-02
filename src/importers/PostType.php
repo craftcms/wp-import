@@ -140,7 +140,7 @@ class PostType extends BaseImporter
             $importer = $this->command->importers[$taxonomy];
             $fieldValues[$importer->field()->handle] = array_map(
                 fn(int $id) => $this->command->import($importer->slug(), $id),
-                match($taxonomy) {
+                match ($taxonomy) {
                     'category' => $data['categories'],
                     default => $data[$taxonomy],
                 },
