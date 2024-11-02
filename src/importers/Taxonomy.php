@@ -164,9 +164,11 @@ class Taxonomy extends BaseImporter
         $field->handle = $fieldHandle;
         $field->source = sprintf('group:%s', $this->categoryGroup()->uid);
 
-        if (!Craft::$app->fields->saveField($field)) {
-            throw new Exception(implode(', ', $field->getFirstErrors()));
-        }
+        $this->command->do("Creating `$field->name` Categories field", function() use ($field) {
+            if (!Craft::$app->fields->saveField($field)) {
+                throw new Exception(implode(', ', $field->getFirstErrors()));
+            }
+        });
 
         return $this->field = $field;
     }

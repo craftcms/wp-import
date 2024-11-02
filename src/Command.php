@@ -419,9 +419,11 @@ class Command extends Controller
             $field->handle = $handle;
             $field->instructions = $fieldData['instructions'];
 
-            if (!Craft::$app->fields->saveField($field)) {
-                throw new Exception(implode(', ', $field->getFirstErrors()));
-            }
+            $this->do(sprintf('Creating `%s` %s field', $field->name, $field::displayName()), function() use ($field) {
+                if (!Craft::$app->fields->saveField($field)) {
+                    throw new Exception(implode(', ', $field->getFirstErrors()));
+                }
+            });
         }
 
         $element = new CustomField($field);
