@@ -65,6 +65,29 @@ use yii\validators\Validator;
 class Command extends Controller
 {
     /**
+     * @event RegisterComponentTypesEvent The event that is triggered when registering importers.
+     *
+     * Transformers must extend [[BaseImporter]].
+     * ---
+     * ```php
+     * use craft\events\RegisterComponentTypesEvent;
+     * use craft\wpimport\Command;
+     * use yii\base\Event;
+     *
+     * if (class_exists(Command::class)) {
+     *     Event::on(
+     *         Command::class,
+     *         Command::EVENT_REGISTER_IMPORTERS,
+     *         function(RegisterComponentTypesEvent $event) {
+     *             $event->types[] = MyImporter::class;
+     *         }
+     *     );
+     * }
+     * ```
+     */
+    public const EVENT_REGISTER_IMPORTERS = 'registerImporters';
+
+    /**
      * @event RegisterComponentTypesEvent The event that is triggered when registering block transformers.
      *
      * Transformers must extend [[BaseBlockTransformer]].
@@ -519,7 +542,8 @@ class Command extends Controller
         $this->importers = ArrayHelper::index([
             ...$this->loadComponents(
                 'importers',
-                filter: fn(string $class) => !in_array($class, [PostType::class, Taxonomy::class]),
+                self::EVENT_REGISTER_IMPORTERS,
+                fn(string $class) => !in_array($class, [PostType::class, Taxonomy::class]),
             ),
             ...array_map(fn(array $data) => new Taxonomy($data, $this), $taxonomies),
             ...array_map(fn(array $data) => new PostType($data, $this), $postTypes),
