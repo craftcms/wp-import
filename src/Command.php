@@ -566,7 +566,7 @@ class Command extends Controller
             $event = new RegisterComponentTypesEvent([
                 'types' => $types,
             ]);
-            $this->trigger(self::EVENT_REGISTER_BLOCK_TRANSFORMERS, $event);
+            $this->trigger($eventName, $event);
             $types = $event->types;
         }
 
