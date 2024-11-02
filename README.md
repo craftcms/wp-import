@@ -156,6 +156,7 @@ ddev craft wp-import --help
 - Range
 - Relationship
 - Select
+- Taxonomy
 - Text
 - Text Area
 - Time Picker
