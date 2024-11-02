@@ -5,10 +5,11 @@
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace craft\wpimport\generators\filesystems;
 
 use Craft;
 use craft\base\FsInterface;
+use craft\wpimport\Command;
 use yii\console\Exception;
 
 /**

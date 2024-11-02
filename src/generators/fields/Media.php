@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\fields\Assets;
-use craft\wpimport\BaseFieldGenerator;
 use craft\wpimport\generators\volumes\Uploads;
 
 /**

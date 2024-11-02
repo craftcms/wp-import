@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\filesystems;
 
 use craft\base\FsInterface;
 use craft\fs\Local;
-use craft\wpimport\BaseFsGenerator;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>

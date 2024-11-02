@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\fields\PlainText;
-use craft\wpimport\BaseFieldGenerator;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>

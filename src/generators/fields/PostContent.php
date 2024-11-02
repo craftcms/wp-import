@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\ckeditor\Field;
-use craft\wpimport\BaseFieldGenerator;
 use craft\wpimport\generators\ckeconfigs\PostContent as PostContentConfig;
 
 /**

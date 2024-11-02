@@ -10,7 +10,6 @@ namespace craft\wpimport\generators\fields;
 use Craft;
 use craft\base\FieldInterface;
 use craft\fields\Color as ColorField;
-use craft\wpimport\BaseFieldGenerator;
 use craft\wpimport\Command;
 
 /**

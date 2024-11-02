@@ -12,7 +12,6 @@ use craft\fieldlayoutelements\CustomField;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\models\Volume;
-use craft\wpimport\BaseVolumeGenerator;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpId;

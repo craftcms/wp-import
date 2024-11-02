@@ -13,7 +13,6 @@ use craft\fieldlayoutelements\entries\EntryTitleField;
 use craft\models\EntryType;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
-use craft\wpimport\BaseEntryTypeGenerator;
 use craft\wpimport\generators\fields\LinkUrl;
 
 /**

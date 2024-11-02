@@ -8,7 +8,6 @@
 namespace craft\wpimport\generators\ckeconfigs;
 
 use craft\ckeditor\CkeConfig;
-use craft\wpimport\BaseCkeConfigGenerator;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>

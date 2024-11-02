@@ -5,12 +5,13 @@
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace craft\wpimport\generators\entrytypes;
 
 use Craft;
 use craft\ckeditor\Field;
 use craft\helpers\StringHelper;
 use craft\models\EntryType;
+use craft\wpimport\Command;
 use craft\wpimport\generators\fields\PostContent;
 use yii\console\Exception;
 

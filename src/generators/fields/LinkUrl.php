@@ -10,7 +10,6 @@ namespace craft\wpimport\generators\fields;
 use craft\base\FieldInterface;
 use craft\fields\Link;
 use craft\fields\linktypes\Url;
-use craft\wpimport\BaseFieldGenerator;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>

@@ -5,11 +5,12 @@
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace craft\wpimport\generators\volumes;
 
 use Craft;
 use craft\helpers\StringHelper;
 use craft\models\Volume;
+use craft\wpimport\Command;
 use yii\console\Exception;
 
 /**

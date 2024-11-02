@@ -5,11 +5,12 @@
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace craft\wpimport\generators\ckeconfigs;
 
 use Craft;
 use craft\ckeditor\CkeConfig;
 use craft\ckeditor\Plugin as Ckeditor;
+use craft\wpimport\Command;
 use yii\base\InvalidArgumentException;
 use yii\console\Exception;
 

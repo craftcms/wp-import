@@ -5,11 +5,12 @@
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace craft\wpimport\generators\fields;
 
 use Craft;
 use craft\base\FieldInterface;
 use craft\helpers\StringHelper;
+use craft\wpimport\Command;
 use yii\console\Exception;
 
 /**
