@@ -2,6 +2,17 @@
 
 Import all your WordPress content, media, and users into Craft CMS with a single CLI command.
 
+## Table of Contents
+
+- [WordPress Feature Support](#wordpress-feature-support)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Supported Block Types](#supported-block-types)
+- [Supported ACF Fields](#supported-acf-fields)
+- [Extending](#extending)
+- [Getting Help](#getting-help)
+
 ## WordPress Feature Support
 
 Feature | Support
@@ -166,6 +177,34 @@ ddev craft wp-import --help
 - WYSIWYG Editor
 - oEmbed
 
-## We’re Here to Help
+## Extending
+
+There are three types of components that help with importing:
+
+- [Importers](#importers)
+- [Block transformers](#block-transformers)
+- [ACF adapters](#acf-adapters)
+
+If your WordPress site contains unsupported content types, Gutenberg block types, or ACF field types, you can create your own importers, block transformers, or ACF adapters to fill the gaps.
+
+### Importers
+
+Importers represent the high level types of data that will be imported (posts, pages, users, media, etc.). They identify where their data lives within the WordPress REST API, and populate new Craft elements with incoming data.
+
+Custom importers can be placed within `config/wp-import/importers/`. They must extend `craft\wpimport\BaseImporter`. See [src/importers/](./src/importers) for built-in examples.
+
+### Block Transformers
+
+Block transformers are responsible for converting Gutenberg block data into HTML or a nested entry for the “Post Content” CKEditor field.
+
+Custom block transformers can be placed within `config/wp-import/blocktransformers/`. They must extend `craft\wpimport\BaseBlockTransformer`. See [src/blocktransformers/](./src/blocktransformers) for built-in examples.
+
+### ACF Adapters
+
+ACF adapters create custom fields that map to ACF fields, and convert incoming field values into a format that the Craft field can understand.
+
+Custom ACF adapters can be placed within `config/wp-import/acfadapters/`. They must extend `craft\wpimport\BaseAcfAdapter`. See [src/acfadapters/](./src/acfadapters) for built-in examples.
+
+## Getting Help
 
 If you have any questions or suggestions, you can reach us at [support@craftcms.com](mailto:support@craftcms.com) or [post a GitHub issue](https://github.com/craftcms/wp-import/issues). We’ll do what we can to get you up and running with Craft!
