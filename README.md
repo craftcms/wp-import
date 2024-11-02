@@ -140,30 +140,30 @@ ddev craft wp-import --help
 
 ## Supported ACF Fields:
 
-- Text
-- Text Area
-- Number
-- Range
-- Email
-- URL
-- Image
-- File
-- WYSIWYG Editor
-- oEmbed
-- Select
-- Checkbox
-- Radio Button
 - Button Group
-- True / False
-- Link
-- Page Link
-- Relationship
-- User
+- Checkbox
+- Color Picker
 - Date Picker
 - Date Time Picker
-- Time Picker
-- Color Picker
+- Email
+- File
 - Icon Picker
+- Image
+- Link
+- Number
+- Page Link
+- Radio Button
+- Range
+- Relationship
+- Select
+- Text
+- Text Area
+- Time Picker
+- True / False
+- URL
+- User
+- WYSIWYG Editor
+- oEmbed
 
 ## We’re Here to Help
 
