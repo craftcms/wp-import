@@ -409,7 +409,7 @@ class Command extends Controller
     public function acfFieldElement(array $fieldData): CustomField
     {
         // Give it a unique global handle
-        $handle = sprintf('acf_%s_%s', $fieldData['name'], $fieldData['ID']);
+        $handle = sprintf('acf_%s_%s', StringHelper::toHandle($fieldData['name']), $fieldData['ID']);
         $field = Craft::$app->fields->getFieldByHandle($handle);
 
         if (!$field) {
@@ -447,6 +447,7 @@ class Command extends Controller
 
     public function normalizeAcfFieldHandle(string $handle): string
     {
+        $handle = StringHelper::toHandle($handle);
         /** @var HandleValidator $validator */
         $validator = Collection::make((new PlainText())->getValidators())
             ->filter(fn(Validator $validator) => $validator instanceof HandleValidator)
