@@ -163,6 +163,7 @@ ddev craft wp-import --help
 - Link
 - Number
 - Page Link
+- Post Object
 - Radio Button
 - Range
 - Relationship

@@ -174,7 +174,7 @@ class PostType extends BaseImporter
         }
     }
 
-    private function entryType(): EntryType
+    public function entryType(): EntryType
     {
         if (isset($this->entryType)) {
             return $this->entryType;
@@ -289,7 +289,7 @@ class PostType extends BaseImporter
         return $this->entryType = $entryType;
     }
 
-    private function section(): Section
+    public function section(): Section
     {
         if (isset($this->section)) {
             return $this->section;
