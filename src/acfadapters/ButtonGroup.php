@@ -12,8 +12,6 @@ use craft\fields\Dropdown;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class ButtonGroup extends BaseAcfAdapter

@@ -13,8 +13,6 @@ use craft\helpers\DateTimeHelper;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class DateTimePicker extends BaseAcfAdapter

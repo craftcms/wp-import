@@ -16,8 +16,6 @@ use craft\wpimport\generators\volumes\Uploads;
 use craft\wpimport\importers\Media;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class File extends BaseAcfAdapter

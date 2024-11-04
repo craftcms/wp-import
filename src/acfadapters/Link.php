@@ -14,8 +14,6 @@ use craft\fields\linktypes\Url;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Link extends BaseAcfAdapter

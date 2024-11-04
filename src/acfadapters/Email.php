@@ -12,8 +12,6 @@ use craft\fields\Email as EmailField;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Email extends BaseAcfAdapter

@@ -16,8 +16,6 @@ use craft\helpers\StringHelper;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Wysiwyg extends BaseAcfAdapter

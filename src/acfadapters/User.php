@@ -13,8 +13,6 @@ use craft\wpimport\BaseAcfAdapter;
 use craft\wpimport\importers\User as UserImporter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class User extends BaseAcfAdapter

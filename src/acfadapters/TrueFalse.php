@@ -12,8 +12,6 @@ use craft\fields\Lightswitch;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class TrueFalse extends BaseAcfAdapter

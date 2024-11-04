@@ -13,8 +13,6 @@ use craft\fields\linktypes\Url as UrlLinkType;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Url extends BaseAcfAdapter

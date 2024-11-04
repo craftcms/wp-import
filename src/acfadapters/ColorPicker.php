@@ -12,8 +12,6 @@ use craft\fields\Color;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class ColorPicker extends BaseAcfAdapter

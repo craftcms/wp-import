@@ -17,8 +17,6 @@ use craft\wpimport\importers\Taxonomy as TaxonomyImporter;
 use yii\base\NotSupportedException;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Taxonomy extends BaseAcfAdapter

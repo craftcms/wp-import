@@ -13,8 +13,6 @@ use craft\wpimport\BaseAcfAdapter;
 use DateTime;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class DatePicker extends BaseAcfAdapter

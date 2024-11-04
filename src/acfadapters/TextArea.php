@@ -12,8 +12,6 @@ use craft\fields\PlainText;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class TextArea extends BaseAcfAdapter

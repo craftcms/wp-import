@@ -13,8 +13,6 @@ use craft\fields\MultiSelect;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Select extends BaseAcfAdapter

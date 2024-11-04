@@ -12,8 +12,6 @@ use craft\fields\Time;
 use craft\wpimport\BaseAcfAdapter;
 
 /**
- * Base block transformer class
- *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class TimePicker extends BaseAcfAdapter
