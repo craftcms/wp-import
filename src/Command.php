@@ -950,39 +950,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         return $tagGroup;
     }
 
-    private function fieldLayout(array $elements = []): FieldLayout
-    {
-        $fieldLayout = new FieldLayout();
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Content',
-                'elements' => $elements,
-            ]),
-        ]);
-        return $fieldLayout;
-    }
-
-    private function assignFieldToEntryType(FieldInterface $field, EntryType $entryType): void
-    {
-        $fieldLayout = $entryType->getFieldLayout();
-        if (!$fieldLayout->getFieldById($field->id)) {
-            $tab = $fieldLayout->getTabs()[0] ?? null;
-            if (!$tab) {
-                $tab = new FieldLayoutTab([
-                    'name' => 'Content',
-                    'layout' => $fieldLayout,
-                ]);
-                $fieldLayout->setTabs([$tab]);
-            }
-
-            $elements = $tab->getElements();
-            $elements[] = new CustomField($field);
-            $tab->setElements($elements);
-            Craft::$app->entries->saveEntryType($entryType);
-        }
-    }
-
     public function import(string $resource, int|array $data, array $queryParams = []): int
     {
         $importer = $this->importers[$resource] ?? null;
