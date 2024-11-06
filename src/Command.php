@@ -259,8 +259,8 @@ class Command extends Controller
         ]);
 
         $this->captureApiInfo();
-        $this->editionCheck();
         $this->loadImporters();
+        $this->editionCheck();
         $this->loadBlockTransformers();
         $this->loadAcfAdapters();
 
