@@ -17,6 +17,8 @@ use craft\elements\User;
 use craft\enums\CmsEdition;
 use craft\events\RegisterComponentTypesEvent;
 use craft\fieldlayoutelements\CustomField;
+use craft\fieldlayoutelements\Heading;
+use craft\fieldlayoutelements\Markdown;
 use craft\fields\PlainText;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Console;
@@ -389,9 +391,17 @@ class Command extends Controller
                 'layout' => $fieldLayout,
                 'name' => $groupData['title'],
                 'elements' => Collection::make($groupData['fields'])
-                    ->filter(fn(array $fieldData) => !empty($fieldData['name']))
+                    ->map(fn(array $fieldData) => match($fieldData['type']) {
+                        'accordion', 'tab' => new Heading([
+                            'heading' => $fieldData['label'],
+                        ]),
+                        'message' => new Markdown([
+                            'content' => $fieldData['message'],
+                        ]),
+                        default => $this->acfFieldElement($fieldData),
+                    })
+                    ->filter()
                     ->values()
-                    ->map(fn(array $fieldData) => $this->acfFieldElement($fieldData))
                     ->all(),
             ]);
         }
@@ -429,8 +439,12 @@ class Command extends Controller
         return false;
     }
 
-    public function acfFieldElement(array $fieldData): CustomField
+    public function acfFieldElement(array $fieldData): ?CustomField
     {
+        if (empty($fieldData['name'])) {
+            return null;
+        }
+
         // Give it a unique global handle
         $handle = sprintf('acf_%s_%s', StringHelper::toHandle($fieldData['name']), $fieldData['ID']);
         $field = Craft::$app->fields->getFieldByHandle($handle);

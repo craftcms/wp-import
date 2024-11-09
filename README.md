@@ -151,6 +151,7 @@ ddev craft wp-import --help
 
 ## Supported ACF Fields:
 
+- Accordion
 - Button Group
 - Checkbox
 - Color Picker
@@ -161,6 +162,7 @@ ddev craft wp-import --help
 - Icon Picker
 - Image
 - Link
+- Message
 - Number
 - Page Link
 - Post Object
@@ -168,6 +170,7 @@ ddev craft wp-import --help
 - Range
 - Relationship
 - Select
+- Tab
 - Taxonomy
 - Text
 - Text Area
