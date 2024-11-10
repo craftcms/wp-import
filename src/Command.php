@@ -390,19 +390,7 @@ class Command extends Controller
             $tabs[] = new FieldLayoutTab([
                 'layout' => $fieldLayout,
                 'name' => $groupData['title'],
-                'elements' => Collection::make($groupData['fields'])
-                    ->map(fn(array $fieldData) => match($fieldData['type']) {
-                        'accordion', 'tab' => new Heading([
-                            'heading' => $fieldData['label'],
-                        ]),
-                        'message' => new Markdown([
-                            'content' => $fieldData['message'],
-                        ]),
-                        default => $this->acfFieldElement($fieldData),
-                    })
-                    ->filter()
-                    ->values()
-                    ->all(),
+                'elements' => $this->acfFieldElements($groupData['fields']),
             ]);
         }
 
@@ -439,7 +427,36 @@ class Command extends Controller
         return false;
     }
 
-    public function acfFieldElement(array $fieldData): ?CustomField
+    private function acfFieldElements(array $fields): array
+    {
+        return Collection::make($fields)
+            ->map(fn(array $fieldData) => match($fieldData['type']) {
+                'accordion', 'tab' => [
+                    new Heading([
+                        'heading' => $fieldData['label'],
+                    ]),
+                ],
+                'message' => [
+                    new Markdown([
+                        'content' => $fieldData['message'],
+                    ]),
+                ],
+                'group' => [
+                    new Heading([
+                        'heading' => $fieldData['label'],
+                    ]),
+                    ...$this->acfFieldElements($fieldData['sub_fields']),
+                ],
+                default => array_filter([
+                    $this->acfFieldElement($fieldData),
+                ]),
+            })
+            ->flatten(1)
+            ->values()
+            ->all();
+    }
+
+    private function acfFieldElement(array $fieldData): ?CustomField
     {
         if (empty($fieldData['name'])) {
             return null;
@@ -484,7 +501,47 @@ class Command extends Controller
         return $this->acfAdapters[$data['type']];
     }
 
-    public function normalizeAcfFieldHandle(string $handle): string
+    public function prepareAcfFieldValues(string $type, string $slug, array $acfValues): array
+    {
+        // get all the fields from all matching field groups
+        $acfFields = [];
+        foreach ($this->fieldGroupsForEntity($type, $slug) as $groupData) {
+            $acfFields = array_merge($acfFields, $groupData['fields']);
+        }
+
+        return $this->prepareAcfFieldValuesInternal($acfFields, $acfValues);
+    }
+
+    private function prepareAcfFieldValuesInternal(array $acfFields, array $acfValues): array
+    {
+        $fieldValues = [];
+
+        foreach ($acfValues as $fieldName => $fieldValue) {
+            if ($fieldValue === '' || $fieldValue === null) {
+                continue;
+            }
+
+            $fieldData = ArrayHelper::firstWhere($acfFields, fn(array $fieldData) => $fieldData['name'] === $fieldName);
+            if (!$fieldData) {
+                continue;
+            }
+
+            if ($fieldData['type'] === 'group') {
+                $fieldValues = array_merge(
+                    $fieldValues,
+                    $this->prepareAcfFieldValuesInternal($fieldData['sub_fields'], is_array($fieldValue) ? $fieldValue : []),
+                );
+            } else {
+                $handle = $this->normalizeAcfFieldHandle($fieldName);
+                $fieldValue = $this->acfAdapter($fieldData)->normalizeValue($fieldValue, $fieldData);
+                $fieldValues[$handle] = $fieldValue;
+            }
+        }
+
+        return $fieldValues;
+    }
+
+    private function normalizeAcfFieldHandle(string $handle): string
     {
         $handle = StringHelper::toHandle($handle);
         /** @var HandleValidator $validator */
@@ -507,23 +564,6 @@ class Command extends Controller
         }
 
         return $handle;
-    }
-
-    public function normalizeAcfFieldValue(string $type, string $name, string $fieldName, $fieldValue): mixed
-    {
-        if ($fieldValue === '' || $fieldValue === null) {
-            return null;
-        }
-
-        foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
-            foreach ($groupData['fields'] as $fieldData) {
-                if ($fieldData['name'] === $fieldName) {
-                    return $this->acfAdapter($fieldData)->normalizeValue($fieldValue, $fieldData);
-                }
-            }
-        }
-
-        return $fieldValue;
     }
 
     private function loadImporters(): void

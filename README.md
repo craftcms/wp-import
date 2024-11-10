@@ -159,6 +159,7 @@ ddev craft wp-import --help
 - Date Time Picker
 - Email
 - File
+- Group
 - Icon Picker
 - Image
 - Link
