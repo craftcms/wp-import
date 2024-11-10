@@ -149,7 +149,7 @@ ddev craft wp-import --help
 - `jetpack/tiled-gallery`
 - `videopress/video`
 
-## Supported ACF Fields:
+## Supported ACF Fields
 
 - Accordion
 - Button Group
