@@ -76,10 +76,10 @@ class Taxonomy extends BaseImporter
         ];
 
         if (!empty($data['acf'])) {
-            $fieldValues = array_merge(
-                $fieldValues,
-                $this->command->prepareAcfFieldValues('taxonomy', $this->slug(), $data['acf']),
-            );
+            $fieldValues = array_merge($fieldValues, $this->command->prepareAcfFieldValues(
+                $this->command->fieldsForEntity('taxonomy', $this->slug()),
+                $data['acf'],
+            ));
         }
 
         foreach ($fieldValues as $handle => $value) {

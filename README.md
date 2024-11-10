@@ -170,6 +170,7 @@ ddev craft wp-import --help
 - Radio Button
 - Range
 - Relationship
+- Repeater
 - Select
 - Tab
 - Taxonomy

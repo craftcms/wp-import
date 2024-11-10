@@ -148,10 +148,10 @@ class PostType extends BaseImporter
         }
 
         if (!empty($data['acf'])) {
-            $fieldValues = array_merge(
-                $fieldValues,
-                $this->command->prepareAcfFieldValues('post_type', $this->slug(), $data['acf']),
-            );
+            $fieldValues = array_merge($fieldValues, $this->command->prepareAcfFieldValues(
+                $this->command->fieldsForEntity('post_type', $this->slug()),
+                $data['acf'],
+            ));
         }
 
         foreach ($fieldValues as $handle => $value) {

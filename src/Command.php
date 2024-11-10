@@ -397,6 +397,15 @@ class Command extends Controller
         return $tabs;
     }
 
+    public function fieldsForEntity(string $type, string $name): array
+    {
+        $acfFields = [];
+        foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
+            $acfFields = array_merge($acfFields, $groupData['fields']);
+        }
+        return $acfFields;
+    }
+
     private function fieldGroupsForEntity(string $type, string $name): Generator
     {
         foreach ($this->wpInfo['field_groups'] as $groupData) {
@@ -427,7 +436,7 @@ class Command extends Controller
         return false;
     }
 
-    private function acfFieldElements(array $fields): array
+    public function acfFieldElements(array $fields): array
     {
         return Collection::make($fields)
             ->map(fn(array $fieldData) => match($fieldData['type']) {
@@ -501,18 +510,7 @@ class Command extends Controller
         return $this->acfAdapters[$data['type']];
     }
 
-    public function prepareAcfFieldValues(string $type, string $slug, array $acfValues): array
-    {
-        // get all the fields from all matching field groups
-        $acfFields = [];
-        foreach ($this->fieldGroupsForEntity($type, $slug) as $groupData) {
-            $acfFields = array_merge($acfFields, $groupData['fields']);
-        }
-
-        return $this->prepareAcfFieldValuesInternal($acfFields, $acfValues);
-    }
-
-    private function prepareAcfFieldValuesInternal(array $acfFields, array $acfValues): array
+    public function prepareAcfFieldValues(array $acfFields, array $acfValues): array
     {
         $fieldValues = [];
 
@@ -529,7 +527,7 @@ class Command extends Controller
             if ($fieldData['type'] === 'group') {
                 $fieldValues = array_merge(
                     $fieldValues,
-                    $this->prepareAcfFieldValuesInternal($fieldData['sub_fields'], is_array($fieldValue) ? $fieldValue : []),
+                    $this->prepareAcfFieldValues($fieldData['sub_fields'], is_array($fieldValue) ? $fieldValue : []),
                 );
             } else {
                 $handle = $this->normalizeAcfFieldHandle($fieldName);
