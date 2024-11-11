@@ -23,7 +23,7 @@ class WpId extends BaseFieldGenerator
     protected static function create(): FieldInterface
     {
         $field = new Number();
-        $field->name = 'WordPres ID';
+        $field->name = 'WordPress ID';
         $field->handle = 'wpId';
         $field->min = 1;
         $field->searchable = true;
