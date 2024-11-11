@@ -33,7 +33,7 @@ class Color extends BaseFieldGenerator
         $presets = [];
         foreach ($command->wpInfo['color_palette'] as $palette) {
             foreach ($palette as $paletteColor) {
-                $presets[$paletteColor['color']] = true;
+                $presets[strtolower($paletteColor['color'])] = true;
             }
         }
         $field->presets = array_keys($presets);

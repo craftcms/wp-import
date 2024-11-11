@@ -25,7 +25,7 @@ class ColorPicker extends BaseAcfAdapter
     {
         $field = new Color();
         if ($data['default_value']) {
-            $field->defaultColor = $data['default_value'];
+            $field->defaultColor = strtolower($data['default_value']);
         }
         return $field;
     }
