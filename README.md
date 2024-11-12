@@ -159,6 +159,7 @@ ddev craft wp-import --help
 - Date Time Picker
 - Email
 - File
+- Google Map (requires [Google Maps](https://plugins.craftcms.com/google-maps/changelog?craft5) or [Maps](https://plugins.craftcms.com/simplemap))
 - Group
 - Icon Picker
 - Image
