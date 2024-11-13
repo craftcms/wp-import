@@ -41,6 +41,7 @@ add_action('rest_api_init', function() {
         'callback' => fn() => [
             'pong' => true,
         ],
+        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('craftcms/v1', 'info', [
