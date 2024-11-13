@@ -87,7 +87,6 @@ You’ll be prompted for your WordPress site URL, as well as the username and ap
 
 > [!NOTE]
 > If your WordPress site is hosted locally with DDEV, you’ll need to share it via [ngrok](https://ngrok.com/) using the `ddev share` command so `wp-import` can talk to it. Set your `WP_HOME` constant in  `wp-config-ddev.php` to the `Forwarding` URL, and paste the same URL into the `wp-import` command when prompted.
-> ```
 
 The command will then begin importing your content, creating content model components as needed, such as:
 
