@@ -57,17 +57,11 @@ If you’re using Advanced Custom Fields, you’ll need to [opt into including y
 
 ### 5. Install wp-import
 
-You’ll first need to install Craft 5.5, which is still in development. To do that, change your `craftcms/cms` requirement in `composer.json` to:
+First ensure you’re running Craft CMS 5.5.0 or later.
 
-```json
-"craftcms/cms": "5.5.x-dev as 5.5.0-alpha",
-```
-
-Then run the following CLI commands:
+Then run this CLI command:
 
 ```sh
-> ddev composer update craftcms/cms -w
-> ddev craft up
 > ddev composer require craftcms/wp-import --dev
 ```
 
@@ -81,7 +75,7 @@ Then run the following CLI commands:
 
 ## Usage
 
-Run the following CLI command to initiate the import:
+Run this CLI command to initiate the import:
 
 ```sh
 ddev craft wp-import
