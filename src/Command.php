@@ -48,6 +48,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -290,15 +291,28 @@ class Command extends Controller
         if ($this->interactive) {
             $this->do('Fetching info', function() use ($resources, &$totals) {
                 foreach ($resources as $resource) {
+                    $importer = $this->importers[$resource];
+                    $label = $importer->label();
+                    if ($importer instanceof BaseConfigurableImporter) {
+                        $typeLabel = sprintf('(%s)', $importer->typeLabel());
+                        // Console::table() didn't handle sub-value formatting until 5.5.1
+                        if ($this->isColorEnabled() && version_compare(Craft::$app->getVersion(), '5.5.1', '>=')) {
+                            $typeLabel = Console::ansiFormat($typeLabel, [Console::FG_CYAN]);
+                        }
+                        $label = sprintf('%s %s', $label, $typeLabel);
+                    }
+
                     $totals[] = [
-                        $this->importers[$resource]->label(),
+                        $label,
                         [Craft::$app->formatter->asInteger($this->totalItems($resource)), 'align' => 'right'],
                     ];
                 }
             });
 
+            $totals = array_values(Arr::sort($totals, fn(array $item) => Console::stripAnsiFormat($item[0])));
+
             $this->stdout("\n");
-            $this->table(['Resource', 'Total'], $totals);
+            $this->table(['Content Type', 'Total Items'], $totals);
             $this->stdout("\n");
             if (!$this->confirm('Continue with the import?', true)) {
                 $this->stdout("Aborting\n\n");
@@ -595,7 +609,7 @@ class Command extends Controller
             ...$this->loadComponents(
                 'importers',
                 self::EVENT_REGISTER_IMPORTERS,
-                fn(string $class) => !in_array($class, [PostType::class, Taxonomy::class]),
+                fn(string $class) => !is_subclass_of($class, BaseConfigurableImporter::class),
             ),
             ...array_map(fn(array $data) => new Taxonomy($data, $this), $taxonomies),
             ...array_map(fn(array $data) => new PostType($data, $this), $postTypes),

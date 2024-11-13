@@ -24,7 +24,7 @@ use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\models\Section;
 use craft\models\Section_SiteSettings;
-use craft\wpimport\BaseImporter;
+use craft\wpimport\BaseConfigurableImporter;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Color as ColorField;
@@ -43,7 +43,7 @@ use yii\console\Exception;
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class PostType extends BaseImporter
+class PostType extends BaseConfigurableImporter
 {
     private EntryType $entryType;
     private Section $section;
@@ -66,6 +66,11 @@ class PostType extends BaseImporter
     public function label(): string
     {
         return Inflector::pluralize(StringHelper::titleize(str_replace('_', ' ', $this->data['labels']['name'])));
+    }
+
+    public function typeLabel(): string
+    {
+        return 'Post Type';
     }
 
     public function queryParams(): array

@@ -2,6 +2,8 @@
 
 Import all your WordPress content, media, and users into Craft CMS with a single CLI command.
 
+![The wp-import command in action](./cli.png)
+
 ## Table of Contents
 
 - [WordPress Feature Support](#wordpress-feature-support)

@@ -19,7 +19,7 @@ use craft\models\CategoryGroup_SiteSettings;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\models\Site;
-use craft\wpimport\BaseImporter;
+use craft\wpimport\BaseConfigurableImporter;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpId;
@@ -29,7 +29,7 @@ use yii\console\Exception;
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class Taxonomy extends BaseImporter
+class Taxonomy extends BaseConfigurableImporter
 {
     private CategoryGroup $categoryGroup;
     private Categories $field;
@@ -52,6 +52,11 @@ class Taxonomy extends BaseImporter
     public function label(): string
     {
         return $this->data['name'];
+    }
+
+    public function typeLabel(): string
+    {
+        return 'Taxonomy';
     }
 
     public function elementType(): string
