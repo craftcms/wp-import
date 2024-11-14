@@ -157,8 +157,8 @@ class Command extends Controller
     public ?string $password = null;
 
     /**
-     * @var string[] The types of items to import (`post`, `page`, `media`,
-     * `category`, `tag`, `user`, `comment`, or a custom post type/taxonomy name)
+     * @var string[] The content types to import (`post`, `page`, `media`,
+     * `category`, `tag`, `user`, `comment`, or a custom post type/taxonomy’s slug)
      */
     public array $type = [];
 
@@ -297,13 +297,14 @@ class Command extends Controller
                         $typeLabel = sprintf('(%s)', $importer->typeLabel());
                         // Console::table() didn't handle sub-value formatting until 5.5.1
                         if ($this->isColorEnabled() && version_compare(Craft::$app->getVersion(), '5.5.1', '>=')) {
-                            $typeLabel = Console::ansiFormat($typeLabel, [Console::FG_CYAN]);
+                            $typeLabel = Console::ansiFormat($typeLabel, [Console::FG_YELLOW]);
                         }
                         $label = sprintf('%s %s', $label, $typeLabel);
                     }
 
                     $totals[] = [
                         $label,
+                        [$importer->slug(), 'format' => [Console::FG_CYAN]],
                         [Craft::$app->formatter->asInteger($this->totalItems($resource)), 'align' => 'right'],
                     ];
                 }
@@ -312,7 +313,7 @@ class Command extends Controller
             $totals = array_values(Arr::sort($totals, fn(array $item) => Console::stripAnsiFormat($item[0])));
 
             $this->stdout("\n");
-            $this->table(['Content Type', 'Total Items'], $totals);
+            $this->table(['Content Type', 'Slug', 'Total Items'], $totals);
             $this->stdout("\n");
             if (!$this->confirm('Continue with the import?', true)) {
                 $this->stdout("Aborting\n\n");
