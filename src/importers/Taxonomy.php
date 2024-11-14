@@ -128,7 +128,7 @@ class Taxonomy extends BaseConfigurableImporter
             ...$this->command->acfLayoutTabsForEntity('taxonomy', $this->slug(), $fieldLayout),
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
-                'name' => 'WordPress',
+                'name' => 'Meta',
                 'elements' => [
                     new CustomField(WpId::get()),
                 ],

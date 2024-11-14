@@ -13,7 +13,6 @@ use craft\elements\User as UserElement;
 use craft\enums\CmsEdition;
 use craft\fieldlayoutelements\CustomField;
 use craft\helpers\DateTimeHelper;
-use craft\models\FieldLayoutTab;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\WpId;
 use Throwable;
@@ -62,15 +61,9 @@ class Comment extends BaseImporter
         $field = WpId::get();
         if (!$fieldLayout->getFieldById($field->id)) {
             $this->command->do('Updating the comment field layout', function() use ($fieldLayout, $field) {
-                $tabs = $fieldLayout->getTabs();
-                $tabs[] = new FieldLayoutTab([
-                    'name' => 'WordPress',
-                    'layout' => $fieldLayout,
-                    'elements' => [
-                        new CustomField($field),
-                    ],
+                $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+                    new CustomField($field),
                 ]);
-                $fieldLayout->setTabs($tabs);
                 $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
                 Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
             });

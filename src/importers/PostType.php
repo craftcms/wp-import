@@ -243,6 +243,9 @@ class PostType extends BaseConfigurableImporter
             $metaElements[] = new CustomField(Tags::get());
         }
 
+        $metaElements[] = new CustomField(WpId::get());
+        $metaElements[] = new CustomField(Template::get());
+
         $fieldLayout->setTabs([
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
@@ -272,14 +275,6 @@ class PostType extends BaseConfigurableImporter
                 'layout' => $fieldLayout,
                 'name' => 'Meta',
                 'elements' => $metaElements,
-            ]),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'WordPress',
-                'elements' => [
-                    new CustomField(WpId::get()),
-                    new CustomField(Template::get()),
-                ],
             ]),
         ]);
         $entryType->setFieldLayout($fieldLayout);

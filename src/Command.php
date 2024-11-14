@@ -525,6 +525,43 @@ class Command extends Controller
         return $this->acfAdapters[$data['type']];
     }
 
+    /**
+     * Adds field layout elements to a field layout, within a certain tab.
+     *
+     * @param FieldLayout $fieldLayout
+     * @param string $tabName
+     * @param array $elements
+     * @param bool $prependTab
+     */
+    public function addElementsToLayout(
+        FieldLayout $fieldLayout,
+        string $tabName,
+        array $elements,
+        bool $prependTab = false,
+    ): void
+    {
+        $tabs = $fieldLayout->getTabs();
+        $tab = Arr::first($tabs, fn(FieldLayoutTab $tab) => $tab->name === $tabName);
+        if ($tab) {
+            $tab->setElements([
+                ...$tab->getElements(),
+                ...$elements,
+            ]);
+        } else {
+            $tab = new FieldLayoutTab([
+                'name' => $tabName,
+                'layout' => $fieldLayout,
+                'elements' => $elements,
+            ]);
+            if ($prependTab) {
+                array_unshift($tabs, $tab);
+            } else {
+                array_push($tabs, $tab);
+            }
+            $fieldLayout->setTabs($tabs);
+        }
+    }
+
     public function prepareAcfFieldValues(array $acfFields, array $acfValues): array
     {
         $fieldValues = [];

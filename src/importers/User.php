@@ -13,7 +13,6 @@ use craft\elements\User as UserElement;
 use craft\enums\CmsEdition;
 use craft\fieldlayoutelements\CustomField;
 use craft\helpers\StringHelper;
-use craft\models\FieldLayoutTab;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\WpId;
 
@@ -66,15 +65,9 @@ class User extends BaseImporter
         $field = WpId::get();
         if (!$fieldLayout->getFieldById($field->id)) {
             $this->command->do('Updating the user field layout', function() use ($fieldLayout, $field) {
-                $tabs = $fieldLayout->getTabs();
-                $tabs[] = new FieldLayoutTab([
-                    'name' => 'WordPress',
-                    'layout' => $fieldLayout,
-                    'elements' => [
-                        new CustomField($field),
-                    ],
+                $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+                    new CustomField($field),
                 ]);
-                $fieldLayout->setTabs($tabs);
                 Craft::$app->users->saveLayout($fieldLayout);
             });
         }

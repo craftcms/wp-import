@@ -42,7 +42,7 @@ class Uploads extends BaseVolumeGenerator
             ]),
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
-                'name' => 'WordPress',
+                'name' => 'Meta',
                 'elements' => [
                     new CustomField(WpId::get()),
                 ],
