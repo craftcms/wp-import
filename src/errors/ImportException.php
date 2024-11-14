@@ -16,7 +16,7 @@ use yii\console\Exception;
 class ImportException extends Exception
 {
     public function __construct(
-        public readonly string $resource,
+        public readonly string $slug,
         public readonly int $itemId,
         ?Throwable $previous = null,
     ) {

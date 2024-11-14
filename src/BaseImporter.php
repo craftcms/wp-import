@@ -26,19 +26,19 @@ abstract class BaseImporter extends BaseObject
     }
 
     /**
-     * Returns the resource slug (e.g. `posts`).
+     * Returns the content type slug (e.g. `posts`).
      *
      * @return string
      */
     abstract public function slug(): string;
 
     /**
-     * Returns the REST API URI for this resource.
+     * Returns the REST API URI for this content type.
      */
     abstract public function apiUri(): string;
 
     /**
-     * Returns the resource label (e.g. `Posts`).
+     * Returns the content type label (e.g. `Posts`).
      */
     abstract public function label(): string;
 
@@ -53,7 +53,7 @@ abstract class BaseImporter extends BaseObject
     }
 
     /**
-     * Returns the element type imported resources will resolve to.
+     * Returns the element type imported items will resolve to.
      *
      * @return string
      * @phpstan-return class-string<ElementInterface>
@@ -61,7 +61,7 @@ abstract class BaseImporter extends BaseObject
     abstract public function elementType(): string;
 
     /**
-     * Returns whether importing this resource is supported.
+     * Returns whether importing this content type is supported.
      *
      * @param string|null $reason
      * @return bool
@@ -93,7 +93,7 @@ abstract class BaseImporter extends BaseObject
      * Populates an element with the given API data.
      *
      * @param ElementInterface $element The element to populate
-     * @param array $data The resource data
+     * @param array $data The item data
      */
     abstract public function populate(ElementInterface $element, array $data): void;
 }

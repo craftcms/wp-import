@@ -268,30 +268,30 @@ class Command extends Controller
         $this->loadAcfAdapters();
 
         if (!empty($this->type)) {
-            $resources = $this->type;
+            $slugs = $this->type;
         } else {
             // Use this specific order so we don't need to do as many one-off item imports
-            $resources = [
+            $slugs = [
                 UserImporter::SLUG,
                 Media::SLUG,
                 CommentImporter::SLUG,
             ];
-            // Add in any custom post types
+            // Add in the rest
             foreach ($this->importers as $importer) {
-                $resource = $importer->slug();
-                if (!in_array($resource, $resources)) {
-                    $resources[] = $resource;
+                $slug = $importer->slug();
+                if (!in_array($slug, $slugs)) {
+                    $slugs[] = $slug;
                 }
             }
         }
 
-        $resources = array_filter($resources, fn(string $resource) => $this->isSupported($resource));
+        $slugs = array_filter($slugs, fn(string $slug) => $this->isSupported($slug));
         $totals = [];
 
         if ($this->interactive) {
-            $this->do('Fetching info', function() use ($resources, &$totals) {
-                foreach ($resources as $resource) {
-                    $importer = $this->importers[$resource];
+            $this->do('Fetching info', function() use ($slugs, &$totals) {
+                foreach ($slugs as $slug) {
+                    $importer = $this->importers[$slug];
                     $label = $importer->label();
                     if ($importer instanceof BaseConfigurableImporter) {
                         $typeLabel = sprintf('(%s)', $importer->typeLabel());
@@ -305,7 +305,7 @@ class Command extends Controller
                     $totals[] = [
                         $label,
                         [$importer->slug(), 'format' => [Console::FG_CYAN]],
-                        [Craft::$app->formatter->asInteger($this->totalItems($resource)), 'align' => 'right'],
+                        [Craft::$app->formatter->asInteger($this->totalItems($slug)), 'align' => 'right'],
                     ];
                 }
             });
@@ -327,17 +327,17 @@ class Command extends Controller
         }
 
         try {
-            foreach ($resources as $resource) {
-                $label = mb_strtolower($this->importers[$resource]->label());
-                $this->do("Importing $label", function() use ($resource) {
+            foreach ($slugs as $slug) {
+                $label = mb_strtolower($this->importers[$slug]->label());
+                $this->do("Importing $label", function() use ($slug) {
                     Console::indent();
                     try {
-                        $items = $this->items($resource, [
+                        $items = $this->items($slug, [
                             'include' => implode(',', $this->itemId),
                         ]);
                         foreach ($items as $data) {
                             try {
-                                $this->import($resource, $data);
+                                $this->import($slug, $data);
                             } catch (Throwable $e) {
                                 if ($this->failFast) {
                                     throw $e;
@@ -670,12 +670,12 @@ class Command extends Controller
         return $components;
     }
 
-    private function totalItems(string $resource): int
+    private function totalItems(string $slug): int
     {
-        $importer = $this->importers[$resource];
+        $importer = $this->importers[$slug];
         $response = $this->client->get("$this->apiUrl/{$importer->apiUri()}", [
             RequestOptions::AUTH => [$this->username, $this->password],
-            RequestOptions::QUERY => $this->resourceQueryParams($resource),
+            RequestOptions::QUERY => $this->importerQueryParams($slug),
         ]);
         return (int)$response->getHeaderLine('X-WP-Total');
     }
@@ -1017,23 +1017,23 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         return $tagGroup;
     }
 
-    public function import(string $resource, int|array $data, array $queryParams = []): int
+    public function import(string $slug, int|array $data, array $queryParams = []): int
     {
-        $importer = $this->importers[$resource] ?? null;
+        $importer = $this->importers[$slug] ?? null;
         if (!$importer) {
-            throw new InvalidArgumentException("Invalid resource: $resource");
+            throw new InvalidArgumentException("Invalid content type: $slug");
         }
 
         $id = is_int($data) ? $data : $data['id'];
 
         // Did we already import this item in the same request?
-        if (isset($this->idMap[$resource][$id])) {
-            return $this->idMap[$resource][$id];
+        if (isset($this->idMap[$slug][$id])) {
+            return $this->idMap[$slug][$id];
         }
 
         // If this is the first time we've imported an item of this type,
         // give the importer a chance to prep the system for it
-        if (!isset($this->idMap[$resource])) {
+        if (!isset($this->idMap[$slug])) {
             $importer->prep();
         }
 
@@ -1050,12 +1050,12 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             return $element->id;
         }
 
-        $resourceLabel = Inflector::singularize($resource);
+        $importerLabel = Inflector::singularize($slug);
         $name = trim(($data['name'] ?? null) ?: ($data['title']['raw'] ?? null) ?: ($data['slug'] ?? null) ?: '');
         $name = ($name !== '' && $name != $id) ? "`$name` (`$id`)" : "`$id`";
 
         try {
-            $this->do("Importing $resourceLabel $name", function() use (
+            $this->do("Importing $importerLabel $name", function() use (
                 $data,
                 $id,
                 $queryParams,
@@ -1100,13 +1100,13 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         } catch (Throwable $e) {
             // UnknownBlockTypeException's have already been captured
             if (!$e instanceof UnknownBlockTypeException && !$e instanceof UnknownAcfFieldTypeException) {
-                $e = new ImportException($resource, $id, $e);
+                $e = new ImportException($slug, $id, $e);
                 $this->errors[] = $e;
             }
             throw $e;
         }
 
-        return $this->idMap[$resource][$id] = $element->id;
+        return $this->idMap[$slug][$id] = $element->id;
     }
 
     /**
@@ -1128,19 +1128,19 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         return $this->import($data['type'], $data['id'], $queryParams);
     }
 
-    public function isSupported(string $resource, ?string &$reason = null): bool
+    public function isSupported(string $slug, ?string &$reason = null): bool
     {
-        return $this->importers[$resource]->supported($reason);
+        return $this->importers[$slug]->supported($reason);
     }
 
-    public function items(string $resource, array $queryParams = []): Generator
+    public function items(string $slug, array $queryParams = []): Generator
     {
         $page = $this->page ?? 1;
-        $importer = $this->importers[$resource];
+        $importer = $this->importers[$slug];
         do {
             $body = $this->get(
                 "$this->apiUrl/{$importer->apiUri()}",
-                array_merge($this->resourceQueryParams($resource), [
+                array_merge($this->importerQueryParams($slug), [
                     'page' => $page,
                     'per_page' => $this->perPage,
                 ], $queryParams),
@@ -1156,20 +1156,20 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         } while (true);
     }
 
-    public function item(string $resource, int $id, array $queryParams = []): array
+    public function item(string $slug, int $id, array $queryParams = []): array
     {
-        $importer = $this->importers[$resource];
+        $importer = $this->importers[$slug];
         return $this->get(
             "$this->apiUrl/{$importer->apiUri()}/$id",
-            array_merge($this->resourceQueryParams($resource), $queryParams),
+            array_merge($this->importerQueryParams($slug), $queryParams),
         );
     }
 
-    private function resourceQueryParams(string $resource): array
+    private function importerQueryParams(string $slug): array
     {
         return array_merge([
             'context' => 'edit',
-        ], $this->importers[$resource]->queryParams());
+        ], $this->importers[$slug]->queryParams());
     }
 
     public function get(string $uri, array $queryParams = [], ?ResponseInterface &$response = null): array
@@ -1261,7 +1261,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                     );
                 } else {
                     if ($e instanceof ImportException) {
-                        $report .= "Resource: $e->resource\n";
+                        $report .= "Content type: $e->slug\n";
                         $report .= "Item ID: $e->itemId\n";
                         $e = $e->getPrevious();
                     }

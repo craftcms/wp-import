@@ -19,7 +19,7 @@ use yii\base\BaseObject;
 abstract class BaseConfigurableImporter extends BaseImporter
 {
     /**
-     * Returns the resource type label (e.g. `Post Type`).
+     * Returns the content type label (e.g. `Post Type`).
      */
     abstract public function typeLabel(): string;
 }
