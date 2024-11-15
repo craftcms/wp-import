@@ -17,7 +17,7 @@ Import all your WordPress content, media, and users into Craft CMS with a single
 
 ## WordPress Feature Support
 
-Feature | Support
+Feature | Supported
 ------- | ---------
 Posts | ✅
 Pages | ✅
