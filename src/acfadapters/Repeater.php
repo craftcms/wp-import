@@ -32,14 +32,14 @@ class Repeater extends BaseAcfAdapter
         $entryType = $this->entryType($data);
         $field = new Matrix();
         $field->setEntryTypes([$entryType]);
-        $field->viewMode = $data['pagination'] ? Matrix::VIEW_MODE_INDEX : Matrix::VIEW_MODE_BLOCKS;
-        if ($data['min']) {
+        $field->viewMode = ($data['pagination'] ?? false) ? Matrix::VIEW_MODE_INDEX : Matrix::VIEW_MODE_BLOCKS;
+        if ($data['min'] ?? false) {
             $field->minEntries = $data['min'];
         }
-        if ($data['max']) {
+        if ($data['max'] ?? false) {
             $field->maxEntries = $data['max'];
         }
-        if ($data['button_label'] && $data['button_label'] !== 'Add Row') {
+        if (($data['button_label'] ?? false) && $data['button_label'] !== 'Add Row') {
             $field->createButtonLabel = $data['button_label'];
         }
         return $field;
