@@ -507,11 +507,14 @@ class Command extends Controller
                 return $fieldData;
             }
 
-            if ($fieldData['type'] === 'group') {
-                $fieldData = $this->findFieldByKey($key, $fieldData['sub_fields']);
-                if ($fieldData) {
-                    return $fieldData;
-                }
+            switch ($fieldData['type']) {
+                case 'group':
+                case 'repeater':
+                    $fieldData = $this->findFieldByKey($key, $fieldData['sub_fields']);
+                    if ($fieldData) {
+                        return $fieldData;
+                    }
+                    break;
             }
         }
 
