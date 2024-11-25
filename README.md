@@ -53,9 +53,12 @@ Write down the username and generated application password somewhere safe. You�
 
 If you have any custom post types you’d like to be imported, you’ll need to [register them with the REST API](https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-rest-api-support-for-custom-content-types/), by setting `'show_in_rest' => true` in the arguments passed to `register_post_type()`.
 
+> [!TIP]
+> Post types created with Advanced Custom Fields are included in the REST API by default.
+
 ### 4. Include ACF fields in the REST API
 
-If you’re using Advanced Custom Fields, you’ll need to [opt into including your field groups in the REST API](https://www.advancedcustomfields.com/resources/wp-rest-api-integration/#enabling-the-rest-api-for-your-acf-fields) by enabling their “Show in REST API” setting. 
+If you’re using Advanced Custom Fields, you’ll need to [opt into including your field groups in the REST API](https://www.advancedcustomfields.com/resources/wp-rest-api-integration/#enabling-the-rest-api-for-your-acf-fields) by enabling their “Show in REST API” setting.
 
 ### 5. Install wp-import
 
