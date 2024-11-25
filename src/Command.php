@@ -454,7 +454,7 @@ class Command extends Controller
     public function acfFieldElements(array $fields): array
     {
         return Collection::make($fields)
-            ->map(fn(array $fieldData) => match($fieldData['type']) {
+            ->map(fn(array $fieldData) => match ($fieldData['type']) {
                 'accordion', 'tab' => [
                     new Heading([
                         'heading' => $fieldData['label'],
@@ -538,8 +538,7 @@ class Command extends Controller
         string $tabName,
         array $elements,
         bool $prependTab = false,
-    ): void
-    {
+    ): void {
         $tabs = $fieldLayout->getTabs();
         $tab = Arr::first($tabs, fn(FieldLayoutTab $tab) => $tab->name === $tabName);
         if ($tab) {

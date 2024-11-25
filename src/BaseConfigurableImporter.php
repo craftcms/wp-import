@@ -7,10 +7,6 @@
 
 namespace craft\wpimport;
 
-use craft\base\Element;
-use craft\base\ElementInterface;
-use yii\base\BaseObject;
-
 /**
  * Base importer class
  *
