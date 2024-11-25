@@ -137,6 +137,7 @@ ddev craft wp-import --help
 - `core/preformatted`
 - `core/quote`
 - `core/separator`
+- `core/spacer`
 - `core/table`
 - `core/video`
 - `core-embed/twitter`
