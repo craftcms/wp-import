@@ -32,7 +32,7 @@ class PostObject extends BaseAcfAdapter
                 throw new Exception("Unsupported post type in the {$data['label']} field: $type");
             }
             return sprintf('section:%s', $importer->section()->uid);
-        }, $data['post_type']);
+        }, (array)$data['post_type']);
         $field->maxRelations = 1;
         return $field;
     }
