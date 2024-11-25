@@ -10,6 +10,7 @@ namespace craft\wpimport;
 use Craft;
 use craft\base\Element;
 use craft\base\ElementInterface;
+use craft\base\FieldLayoutElement;
 use craft\console\Controller;
 use craft\elements\Entry;
 use craft\elements\User;
@@ -446,6 +447,81 @@ class Command extends Controller
         return false;
     }
 
+    private function clonedFields(array $fieldData): array
+    {
+        $clonedFields = $this->fieldsByKeys($fieldData['clone']);
+        if ($fieldData['prefix_label'] ?? false) {
+            foreach ($clonedFields as &$clonedFieldData) {
+                $clonedFieldData['label'] = sprintf('%s %s', $fieldData['label'], $clonedFieldData['label']);
+            }
+        }
+        if ($fieldData['prefix_name'] ?? false) {
+            foreach ($clonedFields as &$clonedFieldData) {
+                $clonedFieldData['name'] = sprintf('%s_%s', $fieldData['name'], $clonedFieldData['name']);
+            }
+        }
+        return $clonedFields;
+    }
+
+    public function fieldsByKeys(array $keys): array
+    {
+        $fields = [];
+        foreach ($keys as $key) {
+            if (str_starts_with($key, 'group_')) {
+                $group = $this->fieldGroupByKey($key);
+                array_push($fields, ...$group['fields']);
+            } else {
+                $fields[] = $this->fieldByKey($key);
+            }
+        }
+        return $fields;
+    }
+
+    private function fieldGroupByKey(string $key): array
+    {
+        foreach ($this->wpInfo['field_groups'] as $groupData) {
+            if ($groupData['key'] === $key) {
+                return $groupData;
+            }
+        }
+
+        throw new InvalidArgumentException("Invalid field group key: $key");
+    }
+
+    private function fieldByKey(string $key): array
+    {
+        foreach ($this->wpInfo['field_groups'] as $groupData) {
+            $fieldData = $this->findFieldByKey($key, $groupData['fields']);
+            if ($fieldData) {
+                return $fieldData;
+            }
+        }
+
+        throw new InvalidArgumentException("Invalid field key: $key");
+    }
+
+    private function findFieldByKey(string $key, array $fields): ?array
+    {
+        foreach ($fields as $fieldData) {
+            if ($fieldData['key'] === $key) {
+                return $fieldData;
+            }
+
+            if ($fieldData['type'] === 'group') {
+                $fieldData = $this->findFieldByKey($key, $fieldData['sub_fields']);
+                if ($fieldData) {
+                    return $fieldData;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array[] $fields
+     * @return FieldLayoutElement[]
+     */
     public function acfFieldElements(array $fields): array
     {
         return Collection::make($fields)
@@ -466,6 +542,7 @@ class Command extends Controller
                     ]),
                     ...$this->acfFieldElements($fieldData['sub_fields']),
                 ],
+                'clone' => $this->acfFieldElements($this->clonedFields($fieldData)),
                 default => array_filter([
                     $this->acfFieldElement($fieldData),
                 ]),
@@ -570,15 +647,23 @@ class Command extends Controller
                 continue;
             }
 
-            if ($fieldData['type'] === 'group') {
-                $fieldValues = array_merge(
-                    $fieldValues,
-                    $this->prepareAcfFieldValues($fieldData['sub_fields'], is_array($fieldValue) ? $fieldValue : []),
-                );
-            } else {
-                $handle = $this->normalizeAcfFieldHandle($fieldName);
-                $fieldValue = $this->acfAdapter($fieldData)->normalizeValue($fieldValue, $fieldData);
-                $fieldValues[$handle] = $fieldValue;
+            switch ($fieldData['type']) {
+                case 'group':
+                    $fieldValues = array_merge(
+                        $fieldValues,
+                        $this->prepareAcfFieldValues($fieldData['sub_fields'], is_array($fieldValue) ? $fieldValue : []),
+                    );
+                    break;
+                case 'clone':
+                    $fieldValues = array_merge(
+                        $fieldValues,
+                        $this->prepareAcfFieldValues($this->clonedFields($fieldData), is_array($fieldValue) ? $fieldValue : []),
+                    );
+                    break;
+                default:
+                    $handle = $this->normalizeAcfFieldHandle($fieldName);
+                    $fieldValue = $this->acfAdapter($fieldData)->normalizeValue($fieldValue, $fieldData);
+                    $fieldValues[$handle] = $fieldValue;
             }
         }
 
