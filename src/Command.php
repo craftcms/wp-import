@@ -463,7 +463,7 @@ class Command extends Controller
         return $clonedFields;
     }
 
-    public function fieldsByKeys(array $keys): array
+    private function fieldsByKeys(array $keys): array
     {
         $fields = [];
         foreach ($keys as $key) {
