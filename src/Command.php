@@ -10,7 +10,6 @@ namespace craft\wpimport;
 use Craft;
 use craft\base\Element;
 use craft\base\ElementInterface;
-use craft\base\FieldInterface;
 use craft\console\Controller;
 use craft\elements\Entry;
 use craft\elements\User;
@@ -25,12 +24,8 @@ use craft\helpers\Console;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
-use craft\models\CategoryGroup;
-use craft\models\EntryType;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
-use craft\models\Section;
-use craft\models\TagGroup;
 use craft\validators\ColorValidator;
 use craft\validators\HandleValidator;
 use craft\wpimport\errors\ImportException;
@@ -875,182 +870,6 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         $this->do('Upgrading the Craft edition', function() use ($newEdition) {
             Craft::$app->setEdition($newEdition);
         });
-    }
-
-    /**
-     * @template T of FieldInterface
-     * @param string $uid
-     * @param string $name
-     * @param string $handle
-     * @param string $type
-     * @phpstan-param class-string<T> $type
-     * @param callable|null $populate
-     * @return T
-     */
-    private function field(
-        string $uid,
-        string $name,
-        string $handle,
-        string $type,
-        ?callable $populate = null,
-    ): FieldInterface {
-        $field = null;
-
-        /** @var string|FieldInterface $type */
-        $this->do(
-            sprintf('Creating `%s` %s field', $name, $type::displayName()),
-            function() use ($uid, $name, $handle, $type, $populate, &$field) {
-                $field = Craft::$app->fields->getFieldByUid($uid);
-                if ($field) {
-                    return;
-                }
-
-                $handleTaken = Craft::$app->fields->getFieldByHandle($handle) !== null;
-                $field = new $type();
-                $field->uid = $uid;
-                $field->name = $name;
-                $field->handle = $handle . ($handleTaken ? '_' . StringHelper::randomString(5) : '');
-                if ($populate) {
-                    $populate($field);
-                }
-
-                if (!Craft::$app->fields->saveField($field)) {
-                    throw new Exception(implode(', ', $field->getFirstErrors()));
-                }
-            },
-        );
-
-        return $field;
-    }
-
-    private function entryType(
-        string $uid,
-        string $name,
-        string $handle,
-        callable $populate,
-    ): EntryType {
-        $entryType = null;
-
-        $this->do(
-            "Creating `$name` entry type",
-            function() use ($uid, $name, $handle, $populate, &$entryType) {
-                $entryType = Craft::$app->entries->getEntryTypeByUid($uid);
-                if ($entryType) {
-                    return;
-                }
-
-                $handleTaken = Craft::$app->entries->getEntryTypeByHandle($handle) !== null;
-                $entryType = new EntryType();
-                $entryType->uid = $uid;
-                $entryType->name = $name;
-                $entryType->handle = $handle . ($handleTaken ? '_' . StringHelper::randomString(5) : '');
-                $populate($entryType);
-
-                if (!Craft::$app->entries->saveEntryType($entryType)) {
-                    throw new Exception(implode(', ', $entryType->getFirstErrors()));
-                }
-            },
-        );
-
-        return $entryType;
-    }
-
-    private function section(
-        string $uid,
-        string $name,
-        string $handle,
-        callable $populate,
-    ): Section {
-        $section = null;
-
-        $this->do(
-            "Creating `$name` section",
-            function() use ($uid, $name, $handle, $populate, &$section) {
-                $section = Craft::$app->entries->getSectionByUid($uid);
-                if ($section) {
-                    return;
-                }
-
-                $handleTaken = Craft::$app->entries->getSectionByHandle($handle) !== null;
-                $section = new Section();
-                $section->uid = $uid;
-                $section->name = $name;
-                $section->handle = $handle . ($handleTaken ? '_' . StringHelper::randomString(5) : '');
-                $populate($section);
-
-                if (!Craft::$app->entries->saveSection($section)) {
-                    throw new Exception(implode(', ', $section->getFirstErrors()));
-                }
-            },
-        );
-
-        return $section;
-    }
-
-    private function categoryGroup(
-        string $uid,
-        string $name,
-        string $handle,
-        callable $populate,
-    ): CategoryGroup {
-        $categoryGroup = null;
-
-        $this->do(
-            "Creating `$name` category group",
-            function() use ($uid, $name, $handle, $populate, &$categoryGroup) {
-                $categoryGroup = Craft::$app->categories->getGroupByUid($uid);
-                if ($categoryGroup) {
-                    return;
-                }
-
-                $handleTaken = Craft::$app->categories->getGroupByHandle($handle) !== null;
-                $categoryGroup = new CategoryGroup();
-                $categoryGroup->uid = $uid;
-                $categoryGroup->name = $name;
-                $categoryGroup->handle = $handle . ($handleTaken ? '_' . StringHelper::randomString(5) : '');
-                $populate($categoryGroup);
-
-                if (!Craft::$app->categories->saveGroup($categoryGroup)) {
-                    throw new Exception(implode(', ', $categoryGroup->getFirstErrors()));
-                }
-            },
-        );
-
-        return $categoryGroup;
-    }
-
-    private function tagGroup(
-        string $uid,
-        string $name,
-        string $handle,
-        ?callable $populate = null,
-    ): TagGroup {
-        $tagGroup = null;
-
-        $this->do(
-            "Creating `$name` tag group",
-            function() use ($uid, $name, $handle, $populate, &$tagGroup) {
-                $tagGroup = Craft::$app->tags->getTagGroupByUid($uid);
-                if ($tagGroup) {
-                    return;
-                }
-
-                $handleTaken = Craft::$app->tags->getTagGroupByHandle($handle) !== null;
-                $tagGroup = new TagGroup();
-                $tagGroup->uid = $uid;
-                $tagGroup->name = $name;
-                $tagGroup->handle = $handle . ($handleTaken ? '_' . StringHelper::randomString(5) : '');
-                if ($populate) {
-                    $populate($tagGroup);
-                }
-
-                if (!Craft::$app->tags->saveTagGroup($tagGroup)) {
-                    throw new Exception(implode(', ', $tagGroup->getFirstErrors()));
-                }
-            },
-        );
-
-        return $tagGroup;
     }
 
     public function import(string $slug, int|array $data, array $queryParams = []): int
