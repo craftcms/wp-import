@@ -515,6 +515,14 @@ class Command extends Controller
                         return $fieldData;
                     }
                     break;
+                case 'flexible_content':
+                    foreach ($fieldData['layouts'] as $layoutData) {
+                        $fieldData = $this->findFieldByKey($key, $layoutData['sub_fields']);
+                        if ($fieldData) {
+                            return $fieldData;
+                        }
+                    }
+                    break;
             }
         }
 
