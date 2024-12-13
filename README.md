@@ -143,6 +143,7 @@ ddev craft wp-import --help
 - `core/more`
 - `core/paragraph`
 - `core/preformatted`
+- `core/pullquote`
 - `core/quote`
 - `core/separator`
 - `core/spacer`
