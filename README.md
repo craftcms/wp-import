@@ -49,12 +49,12 @@ Within your WP Admin Dashboard, navigate to **Users** and press **Edit** for an 
 
 Write down the username and generated application password somewhere safe. You’ll need it when running the import.
 
-### 3. Include custom post types in the REST API
+### 3. Include custom post types and taxonomies in the REST API
 
-If you have any custom post types you’d like to be imported, you’ll need to [register them with the REST API](https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-rest-api-support-for-custom-content-types/), by setting `'show_in_rest' => true` in the arguments passed to `register_post_type()`.
+If you have any custom post types or taxonomies you’d like to be imported, you’ll need to [register them with the REST API](https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-rest-api-support-for-custom-content-types/), by setting `'show_in_rest' => true` in the arguments passed to `register_post_type()`/`register_taxonomy()`.
 
 > [!TIP]
-> Post types created with Advanced Custom Fields are included in the REST API by default.
+> Post types and taxonomies created with Advanced Custom Fields are included in the REST API by default.
 
 ### 4. Include ACF fields in the REST API
 
