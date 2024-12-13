@@ -193,7 +193,7 @@ class PostType extends BaseConfigurableImporter
         $entryType = new EntryType();
         $entryType->name = $this->data['labels']['singular_name'];
         $entryType->handle = $entryTypeHandle;
-        $entryType->icon = $this->command->normalizeIcon($this->data['icon']) ?? 'pen-nib';
+        $entryType->icon = $this->command->normalizeIcon($this->data['icon'] ?? null) ?? 'pen-nib';
         $entryType->color = Color::Blue;
 
         $fieldLayout = new FieldLayout();
