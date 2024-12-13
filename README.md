@@ -60,6 +60,8 @@ If you have any custom post types or taxonomies you’d like to be imported, you
 
 If you’re using Advanced Custom Fields, you’ll need to [opt into including your field groups in the REST API](https://www.advancedcustomfields.com/resources/wp-rest-api-integration/#enabling-the-rest-api-for-your-acf-fields) by enabling their “Show in REST API” setting.
 
+Field groups registered via PHP can opt into being included in the REST API by passing `'show_in_rest' => true` to `acf_add_local_field_group()`.
+
 > [!WARNING]
 > If you have any Clone fields, edit their settings and ensure that **Display** is set to “Group”. Otherwise their values [won’t get included in the REST API](https://github.com/airesvsg/acf-to-rest-api/issues/93#issuecomment-271560728).
 
