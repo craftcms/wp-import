@@ -214,7 +214,7 @@ class PostType extends BaseConfigurableImporter
             ]);
         }
         if ($this->supports('excerpt')) {
-            $metaElements[] = new Customfield(Caption::get(), [
+            $metaElements[] = new CustomField(Caption::get(), [
                 'label' => 'Excerpt',
                 'handle' => 'excerpt',
             ]);
@@ -236,7 +236,7 @@ class PostType extends BaseConfigurableImporter
 
             /** @var Taxonomy $importer */
             $importer = $this->command->importers[$taxonomy];
-            $metaElements[] = new Customfield($importer->field());
+            $metaElements[] = new CustomField($importer->field());
         }
 
         if ($this->hasTaxonomy('post_tag')) {
