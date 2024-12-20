@@ -128,7 +128,7 @@ class PostType extends BaseConfigurableImporter
             $fieldValues[Tags::get()->handle] = array_map(fn(int $id) => $this->command->import(Tag::SLUG, $id), $data['tags']);
         }
         if ($data['featured_media'] ?? null) {
-            $fieldValues['featuredImage'] = $this->command->import(Media::SLUG, $data['featured_media']);
+            $fieldValues['featuredImage'] = [$this->command->import(Media::SLUG, $data['featured_media'])];
         }
         if ($this->supports('comments') && $this->command->importComments) {
             $fieldValues[Comments::get()->handle] = [
