@@ -85,7 +85,7 @@ class User extends BaseImporter
         }
 
         /** @var UserElement $element */
-        $element->username = $data['username'];
+        $element->username = str_replace(' ', '', $data['username']);
         $element->firstName = $data['first_name'];
         $element->lastName = $data['last_name'];
         $element->email = $data['email'];
