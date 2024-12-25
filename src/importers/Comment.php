@@ -57,17 +57,14 @@ class Comment extends BaseImporter
 
     public function prep(): void
     {
-        $fieldLayout = Craft::$app->fields->getLayoutByType(CommentElement::class);
-        $field = WpId::get();
-        if (!$fieldLayout->getFieldById($field->id)) {
-            $this->command->do('Updating the comment field layout', function() use ($fieldLayout, $field) {
-                $this->command->addElementsToLayout($fieldLayout, 'Meta', [
-                    new CustomField($field),
-                ]);
-                $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
-                Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
-            });
-        }
+        $this->command->do('Updating the comment field layout', function() {
+            $fieldLayout = Craft::$app->fields->getLayoutByType(CommentElement::class);
+            $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+                new CustomField(WpId::get()),
+            ]);
+            $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
+            Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
+        });
     }
 
     public function populate(ElementInterface $element, array $data): void

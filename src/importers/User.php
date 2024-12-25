@@ -61,16 +61,13 @@ class User extends BaseImporter
 
     public function prep(): void
     {
-        $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
-        $field = WpId::get();
-        if (!$fieldLayout->getFieldById($field->id)) {
-            $this->command->do('Updating the user field layout', function() use ($fieldLayout, $field) {
-                $this->command->addElementsToLayout($fieldLayout, 'Meta', [
-                    new CustomField($field),
-                ]);
-                Craft::$app->users->saveLayout($fieldLayout);
-            });
-        }
+        $this->command->do('Updating the user field layout', function() {
+            $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
+            $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+                new CustomField(WpId::get()),
+            ]);
+            Craft::$app->users->saveLayout($fieldLayout);
+        });
     }
 
     public function find(array $data): ?ElementInterface

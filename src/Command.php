@@ -16,6 +16,7 @@ use craft\elements\Entry;
 use craft\elements\User;
 use craft\enums\CmsEdition;
 use craft\events\RegisterComponentTypesEvent;
+use craft\fieldlayoutelements\BaseField;
 use craft\fieldlayoutelements\CustomField;
 use craft\fieldlayoutelements\Heading;
 use craft\fieldlayoutelements\Markdown;
@@ -621,19 +622,16 @@ class Command extends Controller
         string $tabName,
         array $elements,
         bool $prependTab = false,
+        bool $prependElements = false,
     ): void {
         $tabs = $fieldLayout->getTabs();
         $tab = Arr::first($tabs, fn(FieldLayoutTab $tab) => $tab->name === $tabName);
-        if ($tab) {
-            $tab->setElements([
-                ...$tab->getElements(),
-                ...$elements,
-            ]);
-        } else {
+        $newTab = !$tab;
+
+        if ($newTab) {
             $tab = new FieldLayoutTab([
                 'name' => $tabName,
                 'layout' => $fieldLayout,
-                'elements' => $elements,
             ]);
             if ($prependTab) {
                 array_unshift($tabs, $tab);
@@ -641,6 +639,42 @@ class Command extends Controller
                 array_push($tabs, $tab);
             }
             $fieldLayout->setTabs($tabs);
+        }
+
+        // figure out which of these elements aren't already included in the layout
+        $allElements = $fieldLayout->getAllElements();
+        $missingElements = [];
+
+        foreach ($elements as $element) {
+            $test = null;
+            if ($element instanceof CustomField) {
+                $test = fn($e) => $e instanceof CustomField && $e->getFieldUid() === $element->getFieldUid();
+            } elseif ($element instanceof BaseField) {
+                $test = fn($e) => $e instanceof BaseField && $e->attribute() === $element->attribute();
+            } elseif (!$newTab) {
+                // only add non-field layout elements if it's a new tab
+                continue;
+            }
+            if (!$test || Arr::first($allElements, $test) === null) {
+                $missingElements[] = $element;
+            }
+        }
+
+        if (!empty($missingElements)) {
+            $tabElements = $tab->getElements();
+            if ($prependElements) {
+                array_unshift($tabElements, ...$missingElements);
+            } else {
+                array_push($tabElements, ...$missingElements);
+            }
+            $tab->setElements($tabElements);
+        }
+    }
+
+    public function addAcfFieldsToLayout(string $type, string $name, FieldLayout $fieldLayout)
+    {
+        foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
+            $this->addElementsToLayout($fieldLayout, $groupData['title'], $this->acfFieldElements($groupData['fields']));
         }
     }
 

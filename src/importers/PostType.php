@@ -186,17 +186,14 @@ class PostType extends BaseConfigurableImporter
 
         $entryTypeHandle = StringHelper::toHandle($this->data['labels']['singular_name']);
         $entryType = Craft::$app->entries->getEntryTypeByHandle($entryTypeHandle);
-        if ($entryType) {
-            return $this->entryType = $entryType;
+
+        if (!$entryType) {
+            $entryType = new EntryType();
+            $entryType->name = $this->data['labels']['singular_name'];
+            $entryType->handle = $entryTypeHandle;
+            $entryType->icon = $this->command->normalizeIcon($this->data['icon'] ?? null) ?? 'pen-nib';
+            $entryType->color = Color::Blue;
         }
-
-        $entryType = new EntryType();
-        $entryType->name = $this->data['labels']['singular_name'];
-        $entryType->handle = $entryTypeHandle;
-        $entryType->icon = $this->command->normalizeIcon($this->data['icon'] ?? null) ?? 'pen-nib';
-        $entryType->color = Color::Blue;
-
-        $fieldLayout = new FieldLayout();
 
         $contentElements = [];
         if ($this->supports('title')) {
@@ -246,38 +243,24 @@ class PostType extends BaseConfigurableImporter
         $metaElements[] = new CustomField(WpId::get());
         $metaElements[] = new CustomField(Template::get());
 
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Content',
-                'elements' => $contentElements,
+        $fieldLayout = $entryType->getFieldLayout();
+        $this->command->addElementsToLayout($fieldLayout, 'Content', $contentElements, true, true);
+        $this->command->addElementsToLayout($fieldLayout, 'Cover Photo', [
+            new CustomField(Description::get(), [
+                'label' => 'Cover Text',
+                'handle' => 'coverText',
             ]),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Cover Photo',
-                'elements' => [
-                    new CustomField(Description::get(), [
-                        'label' => 'Cover Text',
-                        'handle' => 'coverText',
-                    ]),
-                    new CustomField(MediaField::get(), [
-                        'label' => 'Cover Photo',
-                        'handle' => 'coverPhoto',
-                    ]),
-                    new CustomField(ColorField::get(), [
-                        'label' => 'Cover Overlay Color',
-                        'handle' => 'coverOverlayColor',
-                    ]),
-                ],
+            new CustomField(MediaField::get(), [
+                'label' => 'Cover Photo',
+                'handle' => 'coverPhoto',
             ]),
-            ...$this->command->acfLayoutTabsForEntity('post_type', $this->slug(), $fieldLayout),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Meta',
-                'elements' => $metaElements,
+            new CustomField(ColorField::get(), [
+                'label' => 'Cover Overlay Color',
+                'handle' => 'coverOverlayColor',
             ]),
         ]);
-        $entryType->setFieldLayout($fieldLayout);
+        $this->command->addAcfFieldsToLayout('post_type', $this->slug(), $fieldLayout);
+        $this->command->addElementsToLayout($fieldLayout, 'Meta', $metaElements);
 
         $this->command->do("Creating `$entryType->name` entry type", function() use ($entryType) {
             if (!Craft::$app->entries->saveEntryType($entryType)) {

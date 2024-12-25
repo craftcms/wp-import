@@ -7,11 +7,13 @@
 
 namespace craft\wpimport\generators\volumes;
 
+use Craft;
 use craft\fieldlayoutelements\assets\AltField;
 use craft\fieldlayoutelements\CustomField;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\models\Volume;
+use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpId;
@@ -29,29 +31,22 @@ class Uploads extends BaseVolumeGenerator
 
     protected static function populate(Volume $volume): void
     {
-        $fieldLayout = new FieldLayout();
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Content',
-                'elements' => [
-                    new AltField(),
-                    new CustomField(Caption::get()),
-                    new CustomField(Description::get()),
-                ],
-            ]),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Meta',
-                'elements' => [
-                    new CustomField(WpId::get()),
-                ],
-            ]),
-        ]);
-
         $volume->name = 'Uploads';
         $volume->handle = 'uploads';
         $volume->setFsHandle(UploadsFs::get()->handle);
-        $volume->setFieldLayout($fieldLayout);
+    }
+
+    protected static function updateFieldLayout(FieldLayout $fieldLayout): void
+    {
+        /** @var Command $command */
+        $command = Craft::$app->controller;
+        $command->addElementsToLayout($fieldLayout, 'Content', [
+            new AltField(),
+            new CustomField(Caption::get()),
+            new CustomField(Description::get()),
+        ], true, true);
+        $command->addElementsToLayout($fieldLayout, 'Meta', [
+            new CustomField(WpId::get()),
+        ]);
     }
 }
