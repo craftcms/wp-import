@@ -15,6 +15,7 @@ use craft\fieldlayoutelements\CustomField;
 use craft\helpers\DateTimeHelper;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 use Throwable;
 use verbb\comments\elements\Comment as CommentElement;
 use verbb\comments\services\Comments as CommentsService;
@@ -61,6 +62,7 @@ class Comment extends BaseImporter
             $fieldLayout = Craft::$app->fields->getLayoutByType(CommentElement::class);
             $this->command->addElementsToLayout($fieldLayout, 'Meta', [
                 new CustomField(WpId::get()),
+                new CustomField(WpTitle::get()),
             ]);
             $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
             Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);

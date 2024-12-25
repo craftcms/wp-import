@@ -15,6 +15,7 @@ use craft\fieldlayoutelements\CustomField;
 use craft\helpers\StringHelper;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -65,6 +66,7 @@ class User extends BaseImporter
             $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
             $this->command->addElementsToLayout($fieldLayout, 'Meta', [
                 new CustomField(WpId::get()),
+                new CustomField(WpTitle::get()),
             ]);
             Craft::$app->users->saveLayout($fieldLayout);
         });

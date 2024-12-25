@@ -15,9 +15,11 @@ use craft\fs\Local;
 use craft\helpers\Assets;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\FileHelper;
+use craft\helpers\StringHelper;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Description;
+use craft\wpimport\generators\fields\WpTitle;
 use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
 use craft\wpimport\generators\volumes\Uploads;
 use craft\wpimport\generators\volumes\Uploads as UploadsVolume;
@@ -59,7 +61,8 @@ class Media extends BaseImporter
 
         /** @var Asset $element */
         $element->volumeId = Uploads::get()->id;
-        $element->title = $data['title']['raw'];
+        $element->title = StringHelper::safeTruncate($data['title']['raw'], 255);
+        $element->setFieldValue(WpTitle::get()->handle, $data['title']['raw']);
 
         /** @var Local $fs */
         $fs = UploadsFs::get();

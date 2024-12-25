@@ -17,6 +17,7 @@ use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
 
 /**
@@ -47,6 +48,7 @@ class Uploads extends BaseVolumeGenerator
         ], true, true);
         $command->addElementsToLayout($fieldLayout, 'Meta', [
             new CustomField(WpId::get()),
+            new CustomField(WpTitle::get())
         ]);
     }
 }

@@ -37,6 +37,7 @@ use craft\wpimport\generators\fields\Sticky;
 use craft\wpimport\generators\fields\Tags;
 use craft\wpimport\generators\fields\Template;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 use Throwable;
 use yii\console\Exception;
 
@@ -106,7 +107,9 @@ class PostType extends BaseConfigurableImporter
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
-        $element->title = ($data['title']['raw'] ?? null) ?: null;
+        $title = $data['title']['raw'] ?? null;
+        $element->title = $title !== null ? StringHelper::safeTruncate($title, 255) : null;
+        $element->setFieldValue(WpTitle::get()->handle, $title);
         $element->slug = $data['slug'];
         $element->postDate = DateTimeHelper::toDateTime($data['date_gmt']);
         $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
@@ -241,6 +244,7 @@ class PostType extends BaseConfigurableImporter
         }
 
         $metaElements[] = new CustomField(WpId::get());
+        $metaElements[] = new CustomField(WpTitle::get());
         $metaElements[] = new CustomField(Template::get());
 
         $fieldLayout = $entryType->getFieldLayout();

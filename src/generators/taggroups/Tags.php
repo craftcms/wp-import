@@ -14,6 +14,7 @@ use craft\models\FieldLayoutTab;
 use craft\models\TagGroup;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -37,6 +38,7 @@ class Tags extends BaseTagGroupGenerator
         $command = Craft::$app->controller;
         $command->addElementsToLayout($fieldLayout, 'Meta', [
             new CustomField(WpId::get()),
+            new CustomField(WpTitle::get()),
         ]);
     }
 }

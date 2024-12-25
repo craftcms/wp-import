@@ -23,6 +23,7 @@ use craft\wpimport\BaseConfigurableImporter;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 use Throwable;
 use yii\console\Exception;
 
@@ -73,7 +74,8 @@ class Taxonomy extends BaseConfigurableImporter
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
-        $element->title = $data['name'];
+        $element->title = StringHelper::safeTruncate($data['name'], 255);
+        $element->setFieldValue(WpTitle::get()->handle, $data['name']);
         $element->slug = $data['slug'];
 
         $fieldValues = [
@@ -121,6 +123,7 @@ class Taxonomy extends BaseConfigurableImporter
         $this->command->addAcfFieldsToLayout('taxonomy', $this->slug(), $fieldLayout);
         $this->command->addElementsToLayout($fieldLayout, 'Meta', [
             new CustomField(WpId::get()),
+            new CustomField(WpTitle::get())
         ]);
 
         $group->setSiteSettings(array_map(fn(Site $site) => new CategoryGroup_SiteSettings([
