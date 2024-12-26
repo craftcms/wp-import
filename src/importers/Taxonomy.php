@@ -105,8 +105,9 @@ class Taxonomy extends BaseConfigurableImporter
 
         $groupHandle = StringHelper::toHandle($this->label());
         $group = Craft::$app->categories->getGroupByHandle($groupHandle);
+        $newGroup = !$group;
 
-        if (!$group) {
+        if ($newGroup) {
             $group = new CategoryGroup();
             $group->name = $this->label();
             $group->handle = $groupHandle;
@@ -130,7 +131,8 @@ class Taxonomy extends BaseConfigurableImporter
             'siteId' => $site->id,
         ]), Craft::$app->sites->getAllSites(true)));
 
-        $this->command->do("Creating `$group->name` category group", function() use ($group) {
+        $message = sprintf('%s the `%s` category group', $newGroup ? 'Creating' : 'Updating', $group->name);
+        $this->command->do($message, function() use ($group) {
             if (!Craft::$app->categories->saveGroup($group)) {
                 throw new Exception(implode(', ', $group->getFirstErrors()));
             }

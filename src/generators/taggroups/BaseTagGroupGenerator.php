@@ -44,7 +44,7 @@ abstract class BaseTagGroupGenerator
 
         /** @var Command $command */
         $command = Craft::$app->controller;
-        $message = sprintf('%s `%s` tag group', $newGroup ? 'Creating' : 'Saving', $group->name);
+        $message = sprintf('%s the `%s` tag group', $newGroup ? 'Creating' : 'Updating', $group->name);
         $command->do($message, function() use ($group) {
             if (!Craft::$app->tags->saveTagGroup($group)) {
                 throw new Exception(implode(', ', $group->getFirstErrors()));

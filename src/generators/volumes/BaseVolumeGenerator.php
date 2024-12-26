@@ -44,7 +44,7 @@ abstract class BaseVolumeGenerator
 
         /** @var Command $command */
         $command = Craft::$app->controller;
-        $message = sprintf('%s `%s` volume', $newVolume ? 'Creating' : 'Saving', $volume->name);
+        $message = sprintf('%s the `%s` volume', $newVolume ? 'Creating' : 'Updating', $volume->name);
         $command->do($message, function() use ($volume) {
             if (!Craft::$app->volumes->saveVolume($volume)) {
                 throw new Exception(implode(', ', $volume->getFirstErrors()));

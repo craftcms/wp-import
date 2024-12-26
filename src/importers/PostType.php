@@ -189,8 +189,9 @@ class PostType extends BaseConfigurableImporter
 
         $entryTypeHandle = StringHelper::toHandle($this->data['labels']['singular_name']);
         $entryType = Craft::$app->entries->getEntryTypeByHandle($entryTypeHandle);
+        $newEntryType = !$entryType;
 
-        if (!$entryType) {
+        if ($newEntryType) {
             $entryType = new EntryType();
             $entryType->name = $this->data['labels']['singular_name'];
             $entryType->handle = $entryTypeHandle;
@@ -266,7 +267,8 @@ class PostType extends BaseConfigurableImporter
         $this->command->addAcfFieldsToLayout('post_type', $this->slug(), $fieldLayout);
         $this->command->addElementsToLayout($fieldLayout, 'Meta', $metaElements);
 
-        $this->command->do("Creating `$entryType->name` entry type", function() use ($entryType) {
+        $message = sprintf('%s the `%s` entry type', $newEntryType ? 'Creating' : 'Updating', $entryType->name);
+        $this->command->do($message, function() use ($entryType) {
             if (!Craft::$app->entries->saveEntryType($entryType)) {
                 throw new Exception(implode(', ', $entryType->getFirstErrors()));
             }
