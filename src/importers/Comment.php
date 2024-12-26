@@ -76,6 +76,10 @@ class Comment extends BaseImporter
         $element->ownerSiteId = Craft::$app->sites->primarySite->id;
         $element->siteId = Craft::$app->sites->primarySite->id;
 
+        if ($data['parent']) {
+            $element->setParentId($this->command->import(self::SLUG, $data['parent']));
+        }
+
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
                 $element->userId = $this->command->import(User::SLUG, $data['author'], [
@@ -101,9 +105,5 @@ class Comment extends BaseImporter
             'approved' => CommentElement::STATUS_APPROVED,
             default => CommentElement::STATUS_PENDING
         };
-
-        if ($data['parent']) {
-            $element->setParentId($this->command->import(self::SLUG, $data['parent']));
-        }
     }
 }

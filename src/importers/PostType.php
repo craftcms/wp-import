@@ -97,14 +97,14 @@ class PostType extends BaseConfigurableImporter
         $element->sectionId = $this->section()->id;
         $element->setTypeId($this->entryType()->id);
 
+        if ($this->section()->type === Section::TYPE_STRUCTURE && $data['parent']) {
+            $element->setParentId($this->command->import($this->slug(), $data['parent']));
+        }
+
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
         } elseif (!empty($data['author'])) {
             $element->setAuthorId($this->command->import(User::SLUG, $data['author']));
-        }
-
-        if ($this->section()->type === Section::TYPE_STRUCTURE && $data['parent']) {
-            $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
         $title = $data['title']['raw'] ?? null;
