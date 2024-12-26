@@ -23,6 +23,7 @@ use craft\wpimport\generators\fields\WpTitle;
 use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
 use craft\wpimport\generators\volumes\Uploads;
 use craft\wpimport\generators\volumes\Uploads as UploadsVolume;
+use Throwable;
 use yii\console\Exception;
 
 /**
@@ -93,7 +94,11 @@ class Media extends BaseImporter
         $element->dateCreated = DateTimeHelper::toDateTime($data['date_gmt']);
         $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
-            $element->uploaderId = $this->command->import(User::SLUG, $data['author']);
+            try {
+                $element->uploaderId = $this->command->import(User::SLUG, $data['author'], [
+                    'roles' => User::ALL_ROLES,
+                ]);
+            } catch (Throwable) {}
         }
         $element->alt = $data['alt_text'];
         $element->setFieldValues([

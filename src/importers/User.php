@@ -23,6 +23,7 @@ use craft\wpimport\generators\fields\WpTitle;
 class User extends BaseImporter
 {
     public const SLUG = 'user';
+    public const ALL_ROLES = 'administrator,editor,author,contributor,viewer,subscriber';
 
     public function slug(): string
     {

@@ -38,6 +38,7 @@ use craft\wpimport\generators\fields\Tags;
 use craft\wpimport\generators\fields\Template;
 use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\generators\fields\WpTitle;
+use Illuminate\Support\Collection;
 use Throwable;
 use yii\console\Exception;
 
@@ -104,7 +105,11 @@ class PostType extends BaseConfigurableImporter
         if (Craft::$app->edition === CmsEdition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
         } elseif (!empty($data['author'])) {
-            $element->setAuthorId($this->command->import(User::SLUG, $data['author']));
+            try {
+                $element->setAuthorId($this->command->import(User::SLUG, $data['author'], [
+                    'roles' => User::ALL_ROLES,
+                ]));
+            } catch (Throwable) {}
         }
 
         $title = $data['title']['raw'] ?? null;
@@ -128,10 +133,21 @@ class PostType extends BaseConfigurableImporter
             $fieldValues[Sticky::get()->handle] = $data['sticky'] ?? false;
         }
         if ($this->hasTaxonomy('post_tag')) {
-            $fieldValues[Tags::get()->handle] = array_map(fn(int $id) => $this->command->import(Tag::SLUG, $id), $data['tags']);
+            $fieldValues[Tags::get()->handle] = Collection::make($data['tags'])
+                ->map(function(int $id) {
+                    try {
+                        return $this->command->import(Tag::SLUG, $id);
+                    } catch (Throwable) {
+                        return null;
+                    }
+                })
+                ->filter()
+                ->all();
         }
         if ($data['featured_media'] ?? null) {
-            $fieldValues['featuredImage'] = $this->command->import(Media::SLUG, $data['featured_media']);
+            try {
+                $fieldValues['featuredImage'] = $this->command->import(Media::SLUG, $data['featured_media']);
+            } catch (Throwable) {}
         }
         if ($this->supports('comments') && $this->command->importComments) {
             $fieldValues[Comments::get()->handle] = [
@@ -146,13 +162,19 @@ class PostType extends BaseConfigurableImporter
 
             /** @var Taxonomy $importer */
             $importer = $this->command->importers[$taxonomy];
-            $fieldValues[$importer->field()->handle] = array_map(
-                fn(int $id) => $this->command->import($importer->slug(), $id),
-                match ($taxonomy) {
-                    'category' => $data['categories'],
-                    default => $data[$taxonomy],
-                },
-            );
+            $fieldValues[$importer->field()->handle] = Collection::make(match ($taxonomy) {
+                'category' => $data['categories'],
+                default => $data[$taxonomy],
+            })
+                ->map(function(int $id) use ($importer) {
+                    try {
+                        return $this->command->import($importer->slug(), $id);
+                    } catch (Throwable) {
+                        return null;
+                    }
+                })
+                ->filter()
+                ->all();
         }
 
         if (!empty($data['acf'])) {

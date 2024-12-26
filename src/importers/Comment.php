@@ -83,10 +83,9 @@ class Comment extends BaseImporter
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
                 $element->userId = $this->command->import(User::SLUG, $data['author'], [
-                    'roles' => 'administrator,editor,author,contributor,viewer,subscriber',
+                    'roles' => User::ALL_ROLES,
                 ]);
-            } catch (Throwable) {
-            }
+            } catch (Throwable) {}
         }
 
         if (!$element->userId) {
