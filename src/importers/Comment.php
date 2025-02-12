@@ -15,6 +15,7 @@ use craft\fieldlayoutelements\CustomField;
 use craft\helpers\DateTimeHelper;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 use Throwable;
 use verbb\comments\elements\Comment as CommentElement;
 use verbb\comments\services\Comments as CommentsService;
@@ -57,17 +58,15 @@ class Comment extends BaseImporter
 
     public function prep(): void
     {
-        $fieldLayout = Craft::$app->fields->getLayoutByType(CommentElement::class);
-        $field = WpId::get();
-        if (!$fieldLayout->getFieldById($field->id)) {
-            $this->command->do('Updating the comment field layout', function() use ($fieldLayout, $field) {
-                $this->command->addElementsToLayout($fieldLayout, 'Meta', [
-                    new CustomField($field),
-                ]);
-                $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
-                Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
-            });
-        }
+        $this->command->do('Updating the comment field layout', function() {
+            $fieldLayout = Craft::$app->fields->getLayoutByType(CommentElement::class);
+            $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+                new CustomField(WpId::get()),
+                new CustomField(WpTitle::get()),
+            ]);
+            $configData = [$fieldLayout->uid => $fieldLayout->getConfig()];
+            Craft::$app->projectConfig->set(CommentsService::CONFIG_FIELDLAYOUT_KEY, $configData);
+        });
     }
 
     public function populate(ElementInterface $element, array $data): void
@@ -77,13 +76,16 @@ class Comment extends BaseImporter
         $element->ownerSiteId = Craft::$app->sites->primarySite->id;
         $element->siteId = Craft::$app->sites->primarySite->id;
 
+        if ($data['parent']) {
+            $element->setParentId($this->command->import(self::SLUG, $data['parent']));
+        }
+
         if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
                 $element->userId = $this->command->import(User::SLUG, $data['author'], [
-                    'roles' => 'administrator,editor,author,contributor,viewer,subscriber',
+                    'roles' => User::ALL_ROLES,
                 ]);
-            } catch (Throwable) {
-            }
+            } catch (Throwable) {}
         }
 
         if (!$element->userId) {
@@ -102,9 +104,5 @@ class Comment extends BaseImporter
             'approved' => CommentElement::STATUS_APPROVED,
             default => CommentElement::STATUS_PENDING
         };
-
-        if ($data['parent']) {
-            $element->setParentId($this->command->import(self::SLUG, $data['parent']));
-        }
     }
 }

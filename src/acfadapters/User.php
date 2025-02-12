@@ -11,6 +11,8 @@ use craft\base\FieldInterface;
 use craft\fields\Users;
 use craft\wpimport\BaseAcfAdapter;
 use craft\wpimport\importers\User as UserImporter;
+use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -33,9 +35,17 @@ class User extends BaseAcfAdapter
 
     public function normalizeValue(mixed $value, array $data): mixed
     {
-        return array_map(
-            fn(int $id) => $this->command->import(UserImporter::SLUG, $id),
-            (array)$value,
-        );
+        return Collection::make((array)$value)
+            ->map(function(int $id) {
+                try {
+                    return $this->command->import(UserImporter::SLUG, $id, [
+                        'roles' => UserImporter::ALL_ROLES,
+                    ]);
+                } catch (Throwable) {
+                    return null;
+                }
+            })
+            ->filter()
+            ->all();
     }
 }

@@ -7,11 +7,14 @@
 
 namespace craft\wpimport\generators\taggroups;
 
+use Craft;
 use craft\fieldlayoutelements\CustomField;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\models\TagGroup;
+use craft\wpimport\Command;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -27,17 +30,15 @@ class Tags extends BaseTagGroupGenerator
     {
         $group->name = 'Tags';
         $group->handle = 'tags';
+    }
 
-        $fieldLayout = new FieldLayout();
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Meta',
-                'elements' => [
-                    new CustomField(WpId::get()),
-                ],
-            ]),
+    protected static function updateFieldLayout(FieldLayout $fieldLayout): void
+    {
+        /** @var Command $command */
+        $command = Craft::$app->controller;
+        $command->addElementsToLayout($fieldLayout, 'Meta', [
+            new CustomField(WpId::get()),
+            new CustomField(WpTitle::get()),
         ]);
-        $group->setFieldLayout($fieldLayout);
     }
 }

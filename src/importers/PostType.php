@@ -37,6 +37,8 @@ use craft\wpimport\generators\fields\Sticky;
 use craft\wpimport\generators\fields\Tags;
 use craft\wpimport\generators\fields\Template;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
+use Illuminate\Support\Collection;
 use Throwable;
 use yii\console\Exception;
 
@@ -96,17 +98,23 @@ class PostType extends BaseConfigurableImporter
         $element->sectionId = $this->section()->id;
         $element->setTypeId($this->entryType()->id);
 
-        if (Craft::$app->edition === CmsEdition::Solo) {
-            $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
-        } elseif (!empty($data['author'])) {
-            $element->setAuthorId($this->command->import(User::SLUG, $data['author']));
-        }
-
         if ($this->section()->type === Section::TYPE_STRUCTURE && $data['parent']) {
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
-        $element->title = ($data['title']['raw'] ?? null) ?: null;
+        if (Craft::$app->edition === CmsEdition::Solo) {
+            $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
+        } elseif (!empty($data['author'])) {
+            try {
+                $element->setAuthorId($this->command->import(User::SLUG, $data['author'], [
+                    'roles' => User::ALL_ROLES,
+                ]));
+            } catch (Throwable) {}
+        }
+
+        $title = $data['title']['raw'] ?? null;
+        $element->title = $title !== null ? StringHelper::safeTruncate($title, 255) : null;
+        $element->setFieldValue(WpTitle::get()->handle, $title);
         $element->slug = $data['slug'];
         $element->postDate = DateTimeHelper::toDateTime($data['date_gmt']);
         $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
@@ -125,10 +133,21 @@ class PostType extends BaseConfigurableImporter
             $fieldValues[Sticky::get()->handle] = $data['sticky'] ?? false;
         }
         if ($this->hasTaxonomy('post_tag')) {
-            $fieldValues[Tags::get()->handle] = array_map(fn(int $id) => $this->command->import(Tag::SLUG, $id), $data['tags']);
+            $fieldValues[Tags::get()->handle] = Collection::make($data['tags'])
+                ->map(function(int $id) {
+                    try {
+                        return $this->command->import(Tag::SLUG, $id);
+                    } catch (Throwable) {
+                        return null;
+                    }
+                })
+                ->filter()
+                ->all();
         }
         if ($data['featured_media'] ?? null) {
-            $fieldValues['featuredImage'] = [$this->command->import(Media::SLUG, $data['featured_media'])];
+            try {
+                $fieldValues['featuredImage'] = [$this->command->import(Media::SLUG, $data['featured_media'])];
+            } catch (Throwable) {}
         }
         if ($this->supports('comments') && $this->command->importComments) {
             $fieldValues[Comments::get()->handle] = [
@@ -143,13 +162,19 @@ class PostType extends BaseConfigurableImporter
 
             /** @var Taxonomy $importer */
             $importer = $this->command->importers[$taxonomy];
-            $fieldValues[$importer->field()->handle] = array_map(
-                fn(int $id) => $this->command->import($importer->slug(), $id),
-                match ($taxonomy) {
-                    'category' => $data['categories'],
-                    default => $data[$taxonomy],
-                },
-            );
+            $fieldValues[$importer->field()->handle] = Collection::make(match ($taxonomy) {
+                'category' => $data['categories'],
+                default => $data[$taxonomy],
+            })
+                ->map(function(int $id) use ($importer) {
+                    try {
+                        return $this->command->import($importer->slug(), $id);
+                    } catch (Throwable) {
+                        return null;
+                    }
+                })
+                ->filter()
+                ->all();
         }
 
         if (!empty($data['acf'])) {
@@ -186,17 +211,15 @@ class PostType extends BaseConfigurableImporter
 
         $entryTypeHandle = StringHelper::toHandle($this->data['labels']['singular_name']);
         $entryType = Craft::$app->entries->getEntryTypeByHandle($entryTypeHandle);
-        if ($entryType) {
-            return $this->entryType = $entryType;
+        $newEntryType = !$entryType;
+
+        if ($newEntryType) {
+            $entryType = new EntryType();
+            $entryType->name = $this->data['labels']['singular_name'];
+            $entryType->handle = $entryTypeHandle;
+            $entryType->icon = $this->command->normalizeIcon($this->data['icon'] ?? null) ?? 'pen-nib';
+            $entryType->color = Color::Blue;
         }
-
-        $entryType = new EntryType();
-        $entryType->name = $this->data['labels']['singular_name'];
-        $entryType->handle = $entryTypeHandle;
-        $entryType->icon = $this->command->normalizeIcon($this->data['icon'] ?? null) ?? 'pen-nib';
-        $entryType->color = Color::Blue;
-
-        $fieldLayout = new FieldLayout();
 
         $contentElements = [];
         if ($this->supports('title')) {
@@ -214,7 +237,7 @@ class PostType extends BaseConfigurableImporter
             ]);
         }
         if ($this->supports('excerpt')) {
-            $metaElements[] = new Customfield(Caption::get(), [
+            $metaElements[] = new CustomField(Caption::get(), [
                 'label' => 'Excerpt',
                 'handle' => 'excerpt',
             ]);
@@ -236,7 +259,7 @@ class PostType extends BaseConfigurableImporter
 
             /** @var Taxonomy $importer */
             $importer = $this->command->importers[$taxonomy];
-            $metaElements[] = new Customfield($importer->field());
+            $metaElements[] = new CustomField($importer->field());
         }
 
         if ($this->hasTaxonomy('post_tag')) {
@@ -244,42 +267,30 @@ class PostType extends BaseConfigurableImporter
         }
 
         $metaElements[] = new CustomField(WpId::get());
+        $metaElements[] = new CustomField(WpTitle::get());
         $metaElements[] = new CustomField(Template::get());
 
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Content',
-                'elements' => $contentElements,
+        $fieldLayout = $entryType->getFieldLayout();
+        $this->command->addElementsToLayout($fieldLayout, 'Content', $contentElements, true, true);
+        $this->command->addElementsToLayout($fieldLayout, 'Cover Photo', [
+            new CustomField(Description::get(), [
+                'label' => 'Cover Text',
+                'handle' => 'coverText',
             ]),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Cover Photo',
-                'elements' => [
-                    new CustomField(Description::get(), [
-                        'label' => 'Cover Text',
-                        'handle' => 'coverText',
-                    ]),
-                    new CustomField(MediaField::get(), [
-                        'label' => 'Cover Photo',
-                        'handle' => 'coverPhoto',
-                    ]),
-                    new CustomField(ColorField::get(), [
-                        'label' => 'Cover Overlay Color',
-                        'handle' => 'coverOverlayColor',
-                    ]),
-                ],
+            new CustomField(MediaField::get(), [
+                'label' => 'Cover Photo',
+                'handle' => 'coverPhoto',
             ]),
-            ...$this->command->acfLayoutTabsForEntity('post_type', $this->slug(), $fieldLayout),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Meta',
-                'elements' => $metaElements,
+            new CustomField(ColorField::get(), [
+                'label' => 'Cover Overlay Color',
+                'handle' => 'coverOverlayColor',
             ]),
         ]);
-        $entryType->setFieldLayout($fieldLayout);
+        $this->command->addAcfFieldsToLayout('post_type', $this->slug(), $fieldLayout);
+        $this->command->addElementsToLayout($fieldLayout, 'Meta', $metaElements);
 
-        $this->command->do("Creating `$entryType->name` entry type", function() use ($entryType) {
+        $message = sprintf('%s the `%s` entry type', $newEntryType ? 'Creating' : 'Updating', $entryType->name);
+        $this->command->do($message, function() use ($entryType) {
             if (!Craft::$app->entries->saveEntryType($entryType)) {
                 throw new Exception(implode(', ', $entryType->getFirstErrors()));
             }

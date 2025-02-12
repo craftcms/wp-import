@@ -23,6 +23,7 @@ use craft\wpimport\BaseConfigurableImporter;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 use Throwable;
 use yii\console\Exception;
 
@@ -73,7 +74,8 @@ class Taxonomy extends BaseConfigurableImporter
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
-        $element->title = $data['name'];
+        $element->title = StringHelper::safeTruncate($data['name'], 255);
+        $element->setFieldValue(WpTitle::get()->handle, $data['name']);
         $element->slug = $data['slug'];
 
         $fieldValues = [
@@ -103,44 +105,34 @@ class Taxonomy extends BaseConfigurableImporter
 
         $groupHandle = StringHelper::toHandle($this->label());
         $group = Craft::$app->categories->getGroupByHandle($groupHandle);
-        if ($group) {
-            return $this->categoryGroup = $group;
+        $newGroup = !$group;
+
+        if ($newGroup) {
+            $group = new CategoryGroup();
+            $group->name = $this->label();
+            $group->handle = $groupHandle;
+            if (!$this->hierarchical()) {
+                $group->maxLevels = 1;
+            }
         }
 
-        $group = new CategoryGroup();
-        $group->name = $this->label();
-        $group->handle = $groupHandle;
-        if (!$this->hierarchical()) {
-            $group->maxLevels = 1;
-        }
-
-        $fieldLayout = new FieldLayout();
-
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Content',
-                'elements' => [
-                    new TitleField(),
-                    new CustomField(Description::get()),
-                ],
-            ]),
-            ...$this->command->acfLayoutTabsForEntity('taxonomy', $this->slug(), $fieldLayout),
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Meta',
-                'elements' => [
-                    new CustomField(WpId::get()),
-                ],
-            ]),
+        $fieldLayout = $group->getFieldLayout();
+        $this->command->addElementsToLayout($fieldLayout, 'Content', [
+            new TitleField(),
+            new CustomField(Description::get()),
+        ], true, true);
+        $this->command->addAcfFieldsToLayout('taxonomy', $this->slug(), $fieldLayout);
+        $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+            new CustomField(WpId::get()),
+            new CustomField(WpTitle::get())
         ]);
-        $group->setFieldLayout($fieldLayout);
 
         $group->setSiteSettings(array_map(fn(Site $site) => new CategoryGroup_SiteSettings([
             'siteId' => $site->id,
         ]), Craft::$app->sites->getAllSites(true)));
 
-        $this->command->do("Creating `$group->name` category group", function() use ($group) {
+        $message = sprintf('%s the `%s` category group', $newGroup ? 'Creating' : 'Updating', $group->name);
+        $this->command->do($message, function() use ($group) {
             if (!Craft::$app->categories->saveGroup($group)) {
                 throw new Exception(implode(', ', $group->getFirstErrors()));
             }

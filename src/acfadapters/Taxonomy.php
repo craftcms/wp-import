@@ -14,6 +14,8 @@ use craft\wpimport\BaseAcfAdapter;
 use craft\wpimport\generators\taggroups\Tags as TagGroup;
 use craft\wpimport\importers\Tag;
 use craft\wpimport\importers\Taxonomy as TaxonomyImporter;
+use Illuminate\Support\Collection;
+use Throwable;
 use yii\base\NotSupportedException;
 
 /**
@@ -54,6 +56,16 @@ class Taxonomy extends BaseAcfAdapter
             'post_tag' => Tag::SLUG,
             default => $data['taxonomy'],
         };
-        return array_map(fn(int $id) => $this->command->import($slug, $id), (array)$value);
+
+        return Collection::make((array)$value)
+            ->map(function(int $id) use ($slug) {
+                try {
+                    return $this->command->import($slug, $id);
+                } catch (Throwable) {
+                    return null;
+                }
+            })
+            ->filter()
+            ->all();
     }
 }

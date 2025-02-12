@@ -12,6 +12,8 @@ use craft\fields\Assets;
 use craft\wpimport\BaseAcfAdapter;
 use craft\wpimport\generators\volumes\Uploads;
 use craft\wpimport\importers\Media;
+use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -38,9 +40,15 @@ class Image extends BaseAcfAdapter
 
     public function normalizeValue(mixed $value, array $data): mixed
     {
-        return array_map(
-            fn(int $id) => $this->command->import(Media::SLUG, $id),
-            (array)$value,
-        );
+        return Collection::make((array)$value)
+            ->map(function(int $id) {
+                try {
+                    return $this->command->import(Media::SLUG, $id);
+                } catch (Throwable) {
+                    return null;
+                }
+            })
+            ->filter()
+            ->all();
     }
 }

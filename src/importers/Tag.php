@@ -9,7 +9,9 @@ namespace craft\wpimport\importers;
 
 use craft\base\ElementInterface;
 use craft\elements\Tag as TagElement;
+use craft\helpers\StringHelper;
 use craft\wpimport\BaseImporter;
+use craft\wpimport\generators\fields\WpTitle;
 use craft\wpimport\generators\taggroups\Tags;
 
 /**
@@ -43,7 +45,8 @@ class Tag extends BaseImporter
     {
         /** @var TagElement $element */
         $element->groupId = Tags::get()->id;
-        $element->title = $data['name'];
+        $element->title = StringHelper::safeTruncate($data['name'], 255);
+        $element->setFieldValue(WpTitle::get()->handle, $data['name']);
         $element->slug = $data['slug'];
     }
 }

@@ -15,6 +15,7 @@ use craft\fieldlayoutelements\CustomField;
 use craft\helpers\StringHelper;
 use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\WpId;
+use craft\wpimport\generators\fields\WpTitle;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -22,6 +23,7 @@ use craft\wpimport\generators\fields\WpId;
 class User extends BaseImporter
 {
     public const SLUG = 'user';
+    public const ALL_ROLES = 'administrator,editor,author,contributor,viewer,subscriber';
 
     public function slug(): string
     {
@@ -61,16 +63,14 @@ class User extends BaseImporter
 
     public function prep(): void
     {
-        $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
-        $field = WpId::get();
-        if (!$fieldLayout->getFieldById($field->id)) {
-            $this->command->do('Updating the user field layout', function() use ($fieldLayout, $field) {
-                $this->command->addElementsToLayout($fieldLayout, 'Meta', [
-                    new CustomField($field),
-                ]);
-                Craft::$app->users->saveLayout($fieldLayout);
-            });
-        }
+        $this->command->do('Updating the user field layout', function() {
+            $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
+            $this->command->addElementsToLayout($fieldLayout, 'Meta', [
+                new CustomField(WpId::get()),
+                new CustomField(WpTitle::get()),
+            ]);
+            Craft::$app->users->saveLayout($fieldLayout);
+        });
     }
 
     public function find(array $data): ?ElementInterface
@@ -85,7 +85,7 @@ class User extends BaseImporter
         }
 
         /** @var UserElement $element */
-        $element->username = $data['username'];
+        $element->username = str_replace(' ', '', $data['username']);
         $element->firstName = $data['first_name'];
         $element->lastName = $data['last_name'];
         $element->email = $data['email'];

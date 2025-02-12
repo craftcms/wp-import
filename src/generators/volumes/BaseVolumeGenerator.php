@@ -9,6 +9,7 @@ namespace craft\wpimport\generators\volumes;
 
 use Craft;
 use craft\helpers\StringHelper;
+use craft\models\FieldLayout;
 use craft\models\Volume;
 use craft\wpimport\Command;
 use yii\console\Exception;
@@ -18,11 +19,18 @@ use yii\console\Exception;
  */
 abstract class BaseVolumeGenerator
 {
+    private static array $volumes = [];
+
     public static function get(): Volume
     {
-        $volume = Craft::$app->volumes->getVolumeByUid(static::uid());
+        if (isset(self::$volumes[static::uid()])) {
+            return self::$volumes[static::uid()];
+        }
 
-        if (!$volume) {
+        $volume = Craft::$app->volumes->getVolumeByUid(static::uid());
+        $newVolume = !$volume;
+
+        if ($newVolume) {
             $volume = new Volume();
             $volume->uid = static::uid();
             static::populate($volume);
@@ -30,17 +38,20 @@ abstract class BaseVolumeGenerator
             if (Craft::$app->volumes->getVolumeByHandle($volume->handle) !== null) {
                 $volume->handle .= '_' . StringHelper::randomString(5);
             }
-
-            /** @var Command $command */
-            $command = Craft::$app->controller;
-            $command->do("Creating `$volume->name` volume", function() use ($volume) {
-                if (!Craft::$app->volumes->saveVolume($volume)) {
-                    throw new Exception(implode(', ', $volume->getFirstErrors()));
-                }
-            });
         }
 
-        return $volume;
+        static::updateFieldLayout($volume->getFieldLayout());
+
+        /** @var Command $command */
+        $command = Craft::$app->controller;
+        $message = sprintf('%s the `%s` volume', $newVolume ? 'Creating' : 'Updating', $volume->name);
+        $command->do($message, function() use ($volume) {
+            if (!Craft::$app->volumes->saveVolume($volume)) {
+                throw new Exception(implode(', ', $volume->getFirstErrors()));
+            }
+        });
+
+        return self::$volumes[static::uid()] = $volume;
     }
 
     /**
@@ -52,4 +63,11 @@ abstract class BaseVolumeGenerator
      * Creates and configures the volume (but doesn’t save it).
      */
     abstract protected static function populate(Volume $volume): void;
+
+    /**
+     * Updates the tag group’s field layout.
+     */
+    protected static function updateFieldLayout(FieldLayout $fieldLayout): void
+    {
+    }
 }
