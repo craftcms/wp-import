@@ -146,7 +146,7 @@ class PostType extends BaseConfigurableImporter
         }
         if ($data['featured_media'] ?? null) {
             try {
-                $fieldValues['featuredImage'] = $this->command->import(Media::SLUG, $data['featured_media']);
+                $fieldValues['featuredImage'] = [$this->command->import(Media::SLUG, $data['featured_media'])];
             } catch (Throwable) {}
         }
         if ($this->supports('comments') && $this->command->importComments) {
