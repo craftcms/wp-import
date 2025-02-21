@@ -373,7 +373,7 @@ class Command extends Controller
                 $firstError ??= $e;
             }
         }
-        if ($firstError) {
+        if ($firstError && $this->failFast) {
             throw $firstError;
         }
         return $html;
