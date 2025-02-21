@@ -31,6 +31,7 @@ use craft\models\FieldLayoutTab;
 use craft\validators\ColorValidator;
 use craft\validators\HandleValidator;
 use craft\wpimport\errors\ImportException;
+use craft\wpimport\errors\ReportableExceptionInterface;
 use craft\wpimport\errors\UnknownAcfFieldTypeException;
 use craft\wpimport\errors\UnknownBlockTypeException;
 use craft\wpimport\generators\fields\WpId;
@@ -1238,16 +1239,11 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 }
 
                 $report .= "Error: {$e->getMessage()}\n";
-                if ($e instanceof UnknownBlockTypeException) {
-                    $report .= sprintf(
-                        "Block data:\n%s\n",
-                        Json::encode($e->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-                    );
-                } elseif ($e instanceof UnknownAcfFieldTypeException) {
-                    $report .= sprintf(
-                        "Field data:\n%s\n",
-                        Json::encode($e->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-                    );
+                if ($e instanceof ReportableExceptionInterface) {
+                    $extra = trim($e->getReport(), "\n");
+                    if ($extra !== '') {
+                        $report .= "$extra\n";
+                    }
                 } else {
                     if ($e instanceof ImportException) {
                         $report .= "Content type: $e->slug\n";
