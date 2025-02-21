@@ -10,7 +10,6 @@ namespace craft\wpimport\generators\taggroups;
 use Craft;
 use craft\fieldlayoutelements\CustomField;
 use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
 use craft\models\TagGroup;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\WpId;

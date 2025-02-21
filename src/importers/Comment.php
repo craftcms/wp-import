@@ -85,7 +85,8 @@ class Comment extends BaseImporter
                 $element->userId = $this->command->import(User::SLUG, $data['author'], [
                     'roles' => User::ALL_ROLES,
                 ]);
-            } catch (Throwable) {}
+            } catch (Throwable) {
+            }
         }
 
         if (!$element->userId) {

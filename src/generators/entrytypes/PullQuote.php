@@ -13,9 +13,7 @@ use craft\models\EntryType;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\wpimport\generators\fields\Citation;
-use craft\wpimport\generators\fields\PostContent;
 use craft\wpimport\generators\fields\PullQuote as PullQuoteField;
-use craft\wpimport\generators\fields\Summary;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>

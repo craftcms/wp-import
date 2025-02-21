@@ -20,8 +20,6 @@ use craft\helpers\DateTimeHelper;
 use craft\helpers\Inflector;
 use craft\helpers\StringHelper;
 use craft\models\EntryType;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
 use craft\models\Section;
 use craft\models\Section_SiteSettings;
 use craft\wpimport\BaseConfigurableImporter;
@@ -109,7 +107,8 @@ class PostType extends BaseConfigurableImporter
                 $element->setAuthorId($this->command->import(User::SLUG, $data['author'], [
                     'roles' => User::ALL_ROLES,
                 ]));
-            } catch (Throwable) {}
+            } catch (Throwable) {
+            }
         }
 
         $title = $data['title']['raw'] ?? null;
@@ -147,7 +146,8 @@ class PostType extends BaseConfigurableImporter
         if ($data['featured_media'] ?? null) {
             try {
                 $fieldValues['featuredImage'] = [$this->command->import(Media::SLUG, $data['featured_media'])];
-            } catch (Throwable) {}
+            } catch (Throwable) {
+            }
         }
         if ($this->supports('comments') && $this->command->importComments) {
             $fieldValues[Comments::get()->handle] = [

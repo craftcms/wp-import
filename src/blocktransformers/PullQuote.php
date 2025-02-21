@@ -33,7 +33,7 @@ class PullQuote extends BaseBlockTransformer
         }
 
         $html = '';
-        $paragraphNodes->each(function (Crawler $node) use (&$html) {
+        $paragraphNodes->each(function(Crawler $node) use (&$html) {
             $html .= $node->outerHtml();
         });
 

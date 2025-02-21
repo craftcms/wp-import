@@ -16,8 +16,6 @@ use craft\fields\Categories;
 use craft\helpers\StringHelper;
 use craft\models\CategoryGroup;
 use craft\models\CategoryGroup_SiteSettings;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
 use craft\models\Site;
 use craft\wpimport\BaseConfigurableImporter;
 use craft\wpimport\Command;
@@ -124,7 +122,7 @@ class Taxonomy extends BaseConfigurableImporter
         $this->command->addAcfFieldsToLayout('taxonomy', $this->slug(), $fieldLayout);
         $this->command->addElementsToLayout($fieldLayout, 'Meta', [
             new CustomField(WpId::get()),
-            new CustomField(WpTitle::get())
+            new CustomField(WpTitle::get()),
         ]);
 
         $group->setSiteSettings(array_map(fn(Site $site) => new CategoryGroup_SiteSettings([

@@ -11,7 +11,6 @@ use Craft;
 use craft\fieldlayoutelements\assets\AltField;
 use craft\fieldlayoutelements\CustomField;
 use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
 use craft\models\Volume;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Caption;
@@ -48,7 +47,7 @@ class Uploads extends BaseVolumeGenerator
         ], true, true);
         $command->addElementsToLayout($fieldLayout, 'Meta', [
             new CustomField(WpId::get()),
-            new CustomField(WpTitle::get())
+            new CustomField(WpTitle::get()),
         ]);
     }
 }

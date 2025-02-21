@@ -98,7 +98,8 @@ class Media extends BaseImporter
                 $element->uploaderId = $this->command->import(User::SLUG, $data['author'], [
                     'roles' => User::ALL_ROLES,
                 ]);
-            } catch (Throwable) {}
+            } catch (Throwable) {
+            }
         }
         $element->alt = $data['alt_text'];
         $element->setFieldValues([

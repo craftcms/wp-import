@@ -8,7 +8,6 @@
 namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
-use craft\fields\Number;
 use craft\fields\PlainText;
 
 /**
