@@ -924,10 +924,7 @@ class Command extends Controller
     private function totalItems(string $slug): int
     {
         $importer = $this->importers[$slug];
-        $response = $this->client->get("$this->apiUrl/{$importer->apiUri()}", [
-            RequestOptions::AUTH => [$this->username, $this->password],
-            RequestOptions::QUERY => $this->importerQueryParams($slug),
-        ]);
+        $this->get("$this->apiUrl/{$importer->apiUri()}", $this->importerQueryParams($slug), $response);
         return (int)$response->getHeaderLine('X-WP-Total');
     }
 
@@ -1029,10 +1026,7 @@ MD) . "\n\n");
 
             try {
                 $this->do('Verifying credentials', function() {
-                    $response = $this->client->get("$this->apiUrl/wp/v2/posts", [
-                        RequestOptions::AUTH => [$this->username, $this->password],
-                        RequestOptions::QUERY => ['context' => 'edit'],
-                    ]);
+                    $this->get("$this->apiUrl/wp/v2/posts", ['context' => 'edit'], $response);
                     if ($response->getStatusCode() !== 200) {
                         throw new Exception('Invalid credentials.');
                     }
