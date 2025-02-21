@@ -25,7 +25,7 @@ class DsbDetails extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(DetailsEntryType::get()->id);
 
             $summaryNodes = (new Crawler($data['innerHTML']))->filter('summary');
@@ -34,7 +34,7 @@ class DsbDetails extends BaseBlockTransformer
             }
 
             // save it so we get an ID, before parsing the nested blocks
-            $this->saveNestedEntry($nestedEntry);
+            $this->command->saveNestedEntry($nestedEntry);
 
             $nestedEntry->setFieldValue(
                 'postContent',

@@ -8,11 +8,8 @@
 namespace craft\wpimport;
 
 use Craft;
-use craft\base\Element;
 use craft\elements\Entry;
-use craft\wpimport\generators\fields\PostContent;
 use yii\base\BaseObject;
-use yii\console\Exception;
 
 /**
  * Base block transformer class
@@ -49,31 +46,21 @@ abstract class BaseBlockTransformer extends BaseObject
      *
      * @param Entry $entry
      * @return string The `<craft-entry>` tag to be returned by `render()`
+     * @deprecated
      */
     protected function createNestedEntry(Entry $entry, callable $populate): string
     {
-        $nestedEntry = new Entry();
-        $nestedEntry->fieldId = PostContent::get()->id;
-        $nestedEntry->ownerId = $entry->id;
-        $populate($nestedEntry);
-        $this->saveNestedEntry($nestedEntry);
-        return sprintf('<craft-entry data-entry-id="%s">&nbsp;</craft-entry>', $nestedEntry->id);
+        return $this->command->createNestedEntry($entry, $populate);
     }
 
     /**
      * Saves a nested entry.
      *
      * @param Entry $entry
+     * @deprecated
      */
     protected function saveNestedEntry(Entry $entry): void
     {
-        $entry->setScenario(Element::SCENARIO_ESSENTIALS);
-        if (!Craft::$app->elements->saveElement($entry)) {
-            throw new Exception(sprintf(
-                'Could not save nested %s entry: %s',
-                $entry->getType()->name,
-                implode(', ', $entry->getFirstErrors())
-            ));
-        }
+        $this->command->saveNestedEntry($entry);
     }
 }

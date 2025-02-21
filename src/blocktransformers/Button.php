@@ -31,7 +31,7 @@ class Button extends BaseBlockTransformer
         $label = $nodes->html();
         $url = $nodes->first()->attr('href');
 
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($label, $url) {
+        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($label, $url) {
             $nestedEntry->setTypeId(ButtonEntryType::get()->id);
             $nestedEntry->title = $label;
             $nestedEntry->setFieldValue('buttonUrl', $url);

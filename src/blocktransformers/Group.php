@@ -23,7 +23,7 @@ class Group extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(GroupEntryType::get()->id);
             $nestedEntry->setFieldValue(
                 'backgroundColor',
@@ -43,7 +43,7 @@ class Group extends BaseBlockTransformer
             );
 
             // save it so we get an ID, before parsing the nested blocks
-            $this->saveNestedEntry($nestedEntry);
+            $this->command->saveNestedEntry($nestedEntry);
 
             $nestedEntry->setFieldValue(
                 'postContent',

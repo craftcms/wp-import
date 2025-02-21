@@ -39,7 +39,7 @@ class PullQuote extends BaseBlockTransformer
 
         $cite = $citeNodes->text();
 
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($html, $cite) {
+        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($html, $cite) {
             $nestedEntry->setTypeId(PullQuoteEntryType::get()->id);
             $nestedEntry->setFieldValue('pullQuote', $html);
             $nestedEntry->setFieldvalue('citation', $cite);

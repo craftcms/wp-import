@@ -18,7 +18,7 @@ class CodepenEmbed extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(CodepenEmbedEntryType::get()->id);
             $nestedEntry->setFieldValue('penUrl', $data['attrs']['penURL']);
         });

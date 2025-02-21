@@ -34,6 +34,9 @@ use craft\wpimport\errors\ImportException;
 use craft\wpimport\errors\ReportableExceptionInterface;
 use craft\wpimport\errors\UnknownAcfFieldTypeException;
 use craft\wpimport\errors\UnknownBlockTypeException;
+use craft\wpimport\generators\entrytypes\Media as MediaEntryType;
+use craft\wpimport\generators\fields\Media as MediaField;
+use craft\wpimport\generators\fields\PostContent;
 use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\importers\Comment;
 use craft\wpimport\importers\Comment as CommentImporter;
@@ -393,6 +396,53 @@ class Command extends Controller
 
         $html = $this->blockTransformers[$block['blockName']]->render($block, $entry);
         return trim($html) . "\n";
+    }
+
+    /**
+     * Creates a nested entry.
+     *
+     * @param Entry $entry
+     * @return string The `<craft-entry>` tag to be returned by `render()`
+     */
+    public function createNestedEntry(Entry $entry, callable $populate): string
+    {
+        $nestedEntry = new Entry();
+        $nestedEntry->fieldId = PostContent::get()->id;
+        $nestedEntry->ownerId = $entry->id;
+        $populate($nestedEntry);
+        $this->saveNestedEntry($nestedEntry);
+        return sprintf('<craft-entry data-entry-id="%s">&nbsp;</craft-entry>', $nestedEntry->id);
+    }
+
+    /**
+     * Creates a nested “Media” entry.
+     *
+     * @param Entry $entry
+     * @param int|int[] $assetIds
+     */
+    public function createNestedMediaEntry(Entry $entry, int|array $assetIds): string
+    {
+        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($assetIds) {
+            $nestedEntry->setTypeId(MediaEntryType::get()->id);
+            $nestedEntry->setFieldValue(MediaField::get()->handle, (array)$assetIds);
+        });
+    }
+
+    /**
+     * Saves a nested entry.
+     *
+     * @param Entry $entry
+     */
+    public function saveNestedEntry(Entry $entry): void
+    {
+        $entry->setScenario(Element::SCENARIO_ESSENTIALS);
+        if (!Craft::$app->elements->saveElement($entry)) {
+            throw new Exception(sprintf(
+                'Could not save nested %s entry: %s',
+                $entry->getType()->name,
+                implode(', ', $entry->getFirstErrors())
+            ));
+        }
     }
 
     public function acfLayoutTabsForEntity(string $type, string $name, FieldLayout $fieldLayout): array

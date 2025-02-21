@@ -9,8 +9,6 @@ namespace craft\wpimport\blocktransformers;
 
 use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\generators\entrytypes\Media as MediaEntryType;
-use craft\wpimport\generators\fields\Media as MediaField;
 use craft\wpimport\importers\Media;
 use Throwable;
 
@@ -37,9 +35,6 @@ class Video extends BaseBlockTransformer
             return '';
         }
 
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($assetId) {
-            $nestedEntry->setTypeId(MediaEntryType::get()->id);
-            $nestedEntry->setFieldValue(MediaField::get()->handle, [$assetId]);
-        });
+        return $this->command->createNestedMediaEntry($entry, $assetId);
     }
 }
