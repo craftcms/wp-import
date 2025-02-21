@@ -1255,8 +1255,16 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 } catch (InvalidArgumentException) {
                     throw $e;
                 }
-                if (($body['code'] ?? null) === 'rest_post_invalid_page_number') {
-                    return [];
+                switch ($body['code'] ?? '') {
+                    case 'rest_post_invalid_page_number':
+                        return [];
+                    case 'rest_invalid_param':
+                        // try again without the offending params
+                        $filteredQueryParams = Arr::except($queryParams, array_keys($body['data']['params'] ?? []));
+                        if ($filteredQueryParams !== $queryParams) {
+                            return $this->get($uri, $filteredQueryParams, $response);
+                        }
+                        break;
                 }
             }
             throw $e;
