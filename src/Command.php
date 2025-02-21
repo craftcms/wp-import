@@ -445,6 +445,9 @@ class Command extends Controller
         }
     }
 
+    /**
+     * @deprecated
+     */
     public function acfLayoutTabsForEntity(string $type, string $name, FieldLayout $fieldLayout): array
     {
         $tabs = [];
