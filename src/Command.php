@@ -24,6 +24,7 @@ use craft\fields\PlainText;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Console;
 use craft\helpers\FileHelper;
+use craft\helpers\Html;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
@@ -44,6 +45,7 @@ use craft\wpimport\importers\Media;
 use craft\wpimport\importers\PostType;
 use craft\wpimport\importers\Taxonomy;
 use craft\wpimport\importers\User as UserImporter;
+use DOMElement;
 use Generator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -52,6 +54,7 @@ use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
 use yii\base\InvalidArgumentException;
 use yii\base\Model;
@@ -387,7 +390,7 @@ class Command extends Controller
     {
         if (empty($block['blockName'])) {
             // this post uses the classic editor
-            return $block['innerHTML'];
+            return $this->renderClassicEditorHtml($block['innerHTML'], $entry);
         }
 
         if (!isset($this->blockTransformers[$block['blockName']])) {
@@ -396,6 +399,35 @@ class Command extends Controller
 
         $html = $this->blockTransformers[$block['blockName']]->render($block, $entry);
         return trim($html) . "\n";
+    }
+
+    private function renderClassicEditorHtml(string $html, Entry $entry): string
+    {
+        $crawler = new Crawler("<html><body>$html</body></html>");
+        $body = $crawler->filter('body');
+
+        // replace <img> tags with nested Media entries
+        $body->filter('img')->each(function(Crawler $img) use ($entry) {
+            foreach (Html::explodeClass($img->attr('class')) as $class) {
+                if (preg_match('/^wp-image-(\d+)$/', $class, $match)) {
+                    try {
+                        $assetId = $this->import(Media::SLUG, (int)$match[1]);
+                    } catch (Throwable) {
+                        break;
+                    }
+
+                    /** @var DOMElement $imgNode */
+                    $imgNode = $img->getNode(0);
+                    $entryHtml = $this->createNestedMediaEntry($entry, $assetId);
+                    $entryNode = $imgNode->ownerDocument->importNode(
+                        (new Crawler($entryHtml))->filter('craft-entry')->getNode(0),
+                    );
+                    $imgNode->replaceWith($entryNode);
+                }
+            }
+        });
+
+        return $body->html();
     }
 
     /**
