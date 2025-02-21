@@ -648,7 +648,11 @@ class Command extends Controller
         foreach ($elements as $element) {
             $test = null;
             if ($element instanceof CustomField) {
-                $test = fn($e) => $e instanceof CustomField && $e->getFieldUid() === $element->getFieldUid();
+                $test = fn($e) => (
+                    $e instanceof CustomField &&
+                    $e->getFieldUid() === $element->getFieldUid() &&
+                    $e->getField()->handle === $element->getField()->handle
+                );
             } elseif ($element instanceof BaseField) {
                 $test = fn($e) => $e instanceof BaseField && $e->attribute() === $element->attribute();
             } elseif (!$newTab) {
