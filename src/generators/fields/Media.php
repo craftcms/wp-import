@@ -9,7 +9,7 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\fields\Assets;
-use craft\wpimport\generators\volumes\Uploads;
+use craft\wpimport\generators\volumes\WpContent;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +23,7 @@ class Media extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $sourceKey = sprintf('volume:%s', Uploads::get()->uid);
+        $sourceKey = sprintf('volume:%s', WpContent::get()->uid);
         $field = new Assets();
         $field->name = 'Media';
         $field->handle = 'media';

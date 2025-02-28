@@ -12,7 +12,7 @@ use craft\fields\Assets;
 use craft\helpers\Assets as AssetsHelper;
 use craft\helpers\FileHelper;
 use craft\wpimport\BaseAcfAdapter;
-use craft\wpimport\generators\volumes\Uploads;
+use craft\wpimport\generators\volumes\WpContent;
 use craft\wpimport\importers\Media;
 use Illuminate\Support\Collection;
 use Throwable;
@@ -29,7 +29,7 @@ class File extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $sourceKey = sprintf('volume:%s', Uploads::get()->uid);
+        $sourceKey = sprintf('volume:%s', WpContent::get()->uid);
         $field = new Assets();
         $field->maxRelations = 1;
         $field->sources = [$sourceKey];

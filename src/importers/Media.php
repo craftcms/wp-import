@@ -21,8 +21,8 @@ use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpTitle;
 use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
-use craft\wpimport\generators\volumes\Uploads;
-use craft\wpimport\generators\volumes\Uploads as UploadsVolume;
+use craft\wpimport\generators\volumes\WpContent;
+use craft\wpimport\generators\volumes\WpContent as UploadsVolume;
 use Throwable;
 use yii\console\Exception;
 
@@ -61,7 +61,7 @@ class Media extends BaseImporter
         $folder = Craft::$app->assets->ensureFolderByFullPathAndVolume($path !== '.' ? $path : '', UploadsVolume::get());
 
         /** @var Asset $element */
-        $element->volumeId = Uploads::get()->id;
+        $element->volumeId = WpContent::get()->id;
         $title = $data['title']['raw'] ?? $filename;
         $element->title = StringHelper::safeTruncate($title, 255);
         $element->setFieldValue(WpTitle::get()->handle, $title);

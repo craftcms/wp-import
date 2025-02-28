@@ -22,7 +22,7 @@ use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class Uploads extends BaseVolumeGenerator
+class WpContent extends BaseVolumeGenerator
 {
     protected static function uid(): string
     {
@@ -31,8 +31,9 @@ class Uploads extends BaseVolumeGenerator
 
     protected static function populate(Volume $volume): void
     {
-        $volume->name = 'Uploads';
-        $volume->handle = 'uploads';
+        $volume->name = 'WordPress Content';
+        $volume->handle = 'wpContent';
+        $volume->subpath = 'wp-content';
         $volume->setFsHandle(UploadsFs::get()->handle);
     }
 
