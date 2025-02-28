@@ -21,6 +21,7 @@ add_action('rest_api_init', function() {
         fn(WP_Post_Type $postType) => (
             (!$postType->_builtin || in_array($postType->name, ['post', 'page'])) &&
             strpos($postType->name, 'acf-') !== 0 &&
+            strpos($postType->name, 'gblocks_') !== 0 &&
             strpos($postType->name, 'jp_') !== 0
         )
     );

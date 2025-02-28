@@ -852,6 +852,8 @@ class Command extends Controller
                 ->filter(fn($data, $key) => (
                     !in_array($key, ['attachment', 'nav_menu_item']) &&
                     !str_starts_with($key, 'wp_') &&
+                    !str_starts_with($key, 'acf-') &&
+                    !str_starts_with($key, 'gblocks_') &&
                     !str_starts_with($key, 'jp_')
                 ))
                 ->all();
