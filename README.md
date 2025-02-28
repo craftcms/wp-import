@@ -154,6 +154,11 @@ ddev craft wp-import --help
 - `core-embed/youtube`
 - `cp/codepen-gutenberg-embed-block`
 - `dsb/details-summary-block`
+- `generateblocks/element`
+- `generateblocks/headline`
+- `generateblocks/image`
+- `generateblocks/media`
+- `generateblocks/text`
 - `jetpack/slideshow`
 - `jetpack/tiled-gallery`
 - `videopress/video`

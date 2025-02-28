@@ -62,8 +62,9 @@ class Media extends BaseImporter
 
         /** @var Asset $element */
         $element->volumeId = Uploads::get()->id;
-        $element->title = StringHelper::safeTruncate($data['title']['raw'], 255);
-        $element->setFieldValue(WpTitle::get()->handle, $data['title']['raw']);
+        $title = $data['title']['raw'] ?? $filename;
+        $element->title = StringHelper::safeTruncate($title, 255);
+        $element->setFieldValue(WpTitle::get()->handle, $title);
 
         /** @var Local $fs */
         $fs = UploadsFs::get();
@@ -88,12 +89,13 @@ class Media extends BaseImporter
             $element->avoidFilenameConflicts = true;
         }
 
-        $element->setWidth($data['media_details']['width'] ?? null);
-        $element->setHeight($data['media_details']['height'] ?? null);
-        $element->size = $data['media_details']['filesize'] ?? null;
-        $element->dateCreated = DateTimeHelper::toDateTime($data['date_gmt']);
-        $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
-        if ($data['author'] && Craft::$app->edition->value >= CmsEdition::Pro->value) {
+        if (!empty($data['date_gmt'])) {
+            $element->dateCreated = DateTimeHelper::toDateTime($data['date_gmt']);
+        }
+        if (!empty($data['modified_gmt'])) {
+            $element->dateUpdated = DateTimeHelper::toDateTime($data['modified_gmt']);
+        }
+        if (!empty($data['author']) && Craft::$app->edition->value >= CmsEdition::Pro->value) {
             try {
                 $element->uploaderId = $this->command->import(User::SLUG, $data['author'], [
                     'roles' => User::ALL_ROLES,
@@ -101,10 +103,12 @@ class Media extends BaseImporter
             } catch (Throwable) {
             }
         }
-        $element->alt = $data['alt_text'];
-        $element->setFieldValues([
-            Caption::get()->handle => $data['caption']['raw'],
-            Description::get()->handle => $data['description']['raw'],
-        ]);
+        if (!empty($data['alt_text'])) {
+            $element->alt = $data['alt_text'];
+        }
+        $element->setFieldValues(array_filter([
+            Caption::get()->handle => $data['caption']['raw'] ?? null,
+            Description::get()->handle => $data['description']['raw'] ?? null,
+        ]));
     }
 }
