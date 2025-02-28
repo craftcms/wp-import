@@ -25,15 +25,15 @@ class PullQuote extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         $crawler = new Crawler($data['innerHTML']);
-        $paragraphNodes = $crawler->filter('p');
+        $pNodes = $crawler->filter('p');
         $citeNodes = $crawler->filter('cite');
 
-        if (!$paragraphNodes->count() && !$citeNodes->count()) {
+        if (!$pNodes->count() && !$citeNodes->count()) {
             return '';
         }
 
         $html = '';
-        $paragraphNodes->each(function(Crawler $node) use (&$html) {
+        $pNodes->each(function(Crawler $node) use (&$html) {
             $html .= $node->outerHtml();
         });
 

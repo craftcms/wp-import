@@ -24,12 +24,12 @@ class Button extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        $nodes = (new Crawler($data['innerHTML']))->filter('a');
-        if (!$nodes->count()) {
+        $node = (new Crawler($data['innerHTML']))->filter('a');
+        if (!$node->count()) {
             return '';
         }
-        $label = $nodes->html();
-        $url = $nodes->first()->attr('href');
+        $label = $node->text();
+        $url = $node->attr('href');
 
         return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($label, $url) {
             $nestedEntry->setTypeId(ButtonEntryType::get()->id);

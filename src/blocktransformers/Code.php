@@ -25,11 +25,11 @@ class Code extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         // `<pre class="wp-block-code"><code>` → `<pre><code>`
-        $nodes = (new Crawler($data['innerHTML']))->filter('code');
-        if (!$nodes->count()) {
+        $node = (new Crawler($data['innerHTML']))->filter('code');
+        if (!$node->count()) {
             return '';
         }
-        $code = $nodes->html();
+        $code = $node->html();
         return Html::beginTag('pre') .
             Html::tag('code', $code, [
                 'class' => sprintf('language-%s', $this->detectLanguage($code)),

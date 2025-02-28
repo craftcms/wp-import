@@ -34,6 +34,6 @@ class GBHeadline extends BaseBlockTransformer
             $tag = 'p';
         }
 
-        return HtmlHelper::tag($tag, $node->text());
+        return HtmlHelper::tag($tag, $node->html());
     }
 }

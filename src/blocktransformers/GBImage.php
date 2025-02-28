@@ -30,16 +30,16 @@ class GBImage extends BaseBlockTransformer
             return '';
         }
 
-        $img = (new Crawler($data['innerHTML']))->filter('img');
-        $src = $img->attr('src');
+        $node = (new Crawler($data['innerHTML']))->filter('img');
+        $src = $node->attr('src');
 
         try {
             if ($src) {
                 $assetId = $this->command->import(Media::SLUG, [
                     'id' => $id,
                     'source_url' => $src,
-                    'title' => $img->attr('title'),
-                    'alt_text' => $img->attr('alt'),
+                    'title' => $node->attr('title'),
+                    'alt_text' => $node->attr('alt'),
                 ]);
             } else {
                 $assetId = $this->command->import(Media::SLUG, $id);

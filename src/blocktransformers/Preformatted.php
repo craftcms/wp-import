@@ -25,12 +25,12 @@ class Preformatted extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         // `<pre class="wp-block-preformatted">` → `<pre><code>`
-        $nodes = (new Crawler($data['innerHTML']))->filter('pre');
-        if (!$nodes->count()) {
+        $node = (new Crawler($data['innerHTML']))->filter('pre');
+        if (!$node->count()) {
             return '';
         }
         return Html::beginTag('pre') .
-            Html::tag('code', $nodes->html(), ['class' => 'language-plaintext']) .
+            Html::tag('code', $node->html(), ['class' => 'language-plaintext']) .
             Html::endTag('pre');
     }
 }

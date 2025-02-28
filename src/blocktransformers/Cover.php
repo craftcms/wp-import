@@ -30,9 +30,9 @@ class Cover extends BaseBlockTransformer
         }
 
         if (isset($data['innerBlocks'][0]) && $data['innerBlocks'][0]['blockName'] === 'core/paragraph') {
-            $nodes = (new Crawler($data['innerBlocks'][0]['innerHTML']))->filter('p');
-            if ($nodes->count()) {
-                $entry->setFieldValue('coverText', $nodes->html());
+            $node = (new Crawler($data['innerBlocks'][0]['innerHTML']))->filter('p');
+            if ($node->count()) {
+                $entry->setFieldValue('coverText', $node->html());
             }
         }
 

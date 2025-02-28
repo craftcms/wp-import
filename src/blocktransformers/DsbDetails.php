@@ -28,9 +28,9 @@ class DsbDetails extends BaseBlockTransformer
         return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(DetailsEntryType::get()->id);
 
-            $summaryNodes = (new Crawler($data['innerHTML']))->filter('summary');
-            if ($summaryNodes->count()) {
-                $nestedEntry->setFieldValue(Summary::get()->handle, $summaryNodes->html());
+            $node = (new Crawler($data['innerHTML']))->filter('summary');
+            if ($node->count()) {
+                $nestedEntry->setFieldValue(Summary::get()->handle, $node->html());
             }
 
             // save it so we get an ID, before parsing the nested blocks

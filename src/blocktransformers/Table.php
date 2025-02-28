@@ -25,10 +25,10 @@ class Table extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         // render a new <figure> with `class="table"`
-        $nodes = (new Crawler($data['innerHTML']))->filter('table');
-        if (!$nodes->count()) {
+        $node = (new Crawler($data['innerHTML']))->filter('table');
+        if (!$node->count()) {
             return '';
         }
-        return Html::tag('figure', $nodes->outerHtml(), ['class' => 'table']);
+        return Html::tag('figure', $node->outerHtml(), ['class' => 'table']);
     }
 }

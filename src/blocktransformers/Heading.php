@@ -26,10 +26,10 @@ class Heading extends BaseBlockTransformer
     {
         // render a new heading tag without `class="wp-block-heading"`
         // (can't rely on `$data['attrs']['level']` unfortunately)
-        $nodes = (new Crawler($data['innerHTML']))->filter('h1,h2,h3,h4,h5,h6');
-        if (!$nodes->count()) {
+        $node = (new Crawler($data['innerHTML']))->filter('h1,h2,h3,h4,h5,h6');
+        if (!$node->count()) {
             return '';
         }
-        return Html::tag($nodes->first()->nodeName(), $nodes->html());
+        return Html::tag($node->nodeName(), $node->html());
     }
 }

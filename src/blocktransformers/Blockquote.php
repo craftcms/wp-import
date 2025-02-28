@@ -27,9 +27,9 @@ class Blockquote extends BaseBlockTransformer
         $content = $this->command->renderBlocks($data['innerBlocks'], $entry);
 
         // is there a <cite> tag in innerHTML?
-        $nodes = (new Crawler($data['innerHTML']))->filter('cite');
-        if ($nodes->count()) {
-            $content .= $nodes->outerHtml();
+        $node = (new Crawler($data['innerHTML']))->filter('cite');
+        if ($node->count()) {
+            $content .= $node->outerHtml();
         }
 
         return Html::tag('blockquote', $content);
