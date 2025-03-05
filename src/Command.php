@@ -36,6 +36,7 @@ use craft\wpimport\errors\ReportableExceptionInterface;
 use craft\wpimport\errors\UnknownAcfFieldTypeException;
 use craft\wpimport\errors\UnknownBlockTypeException;
 use craft\wpimport\generators\entrytypes\Media as MediaEntryType;
+use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Media as MediaField;
 use craft\wpimport\generators\fields\PostContent;
 use craft\wpimport\generators\fields\WpId;
@@ -452,11 +453,15 @@ class Command extends Controller
      * @param Entry $entry
      * @param int|int[] $assetIds
      */
-    public function createNestedMediaEntry(Entry $entry, int|array $assetIds): string
+    public function createNestedMediaEntry(Entry $entry, int|array $assetIds, ?string $caption = null): string
     {
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($assetIds) {
+        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($assetIds, $caption) {
             $nestedEntry->setTypeId(MediaEntryType::get()->id);
             $nestedEntry->setFieldValue(MediaField::get()->handle, (array)$assetIds);
+
+            if ($caption) {
+                $nestedEntry->setFieldValue(Caption::get()->handle, $caption);
+            }
         });
     }
 

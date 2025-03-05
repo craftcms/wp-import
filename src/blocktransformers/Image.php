@@ -10,6 +10,7 @@ namespace craft\wpimport\blocktransformers;
 use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
 use craft\wpimport\importers\Media;
+use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
 
 /**
@@ -35,6 +36,14 @@ class Image extends BaseBlockTransformer
             return '';
         }
 
-        return $this->command->createNestedMediaEntry($entry, $assetId);
+        // See if there's a caption
+        $node = (new Crawler($data['innerHTML']))->filter('figcaption');
+        if ($node->count()) {
+            $caption = $node->text();
+        } else {
+            $caption = null;
+        }
+
+        return $this->command->createNestedMediaEntry($entry, $assetId, $caption);
     }
 }

@@ -7,11 +7,14 @@
 
 namespace craft\wpimport\generators\entrytypes;
 
+use Craft;
 use craft\enums\Color;
 use craft\fieldlayoutelements\CustomField;
 use craft\models\EntryType;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
+use craft\wpimport\Command;
+use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Media as MediaField;
 
 /**
@@ -40,19 +43,19 @@ class Media extends BaseEntryTypeGenerator
         $entryType->showStatusField = false;
         $entryType->showSlugField = false;
 
-        $fieldLayout = new FieldLayout();
-        $fieldLayout->setTabs([
-            new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => 'Content',
-                'elements' => [
-                    new CustomField(MediaField::get(), [
-                        'providesThumbs' => true,
-                        'includeInCards' => true,
-                    ]),
-                ],
+        $fieldLayout = $entryType->getFieldLayout();
+
+        /** @var Command $command */
+        $command = Craft::$app->controller;
+        $command->addElementsToLayout($fieldLayout, 'Content', [
+            new CustomField(MediaField::get(), [
+                'providesThumbs' => true,
+                'includeInCards' => true,
             ]),
-        ]);
+            new CustomField(Caption::get(), [
+                'includeInCards' => true,
+            ]),
+        ], true);
         $entryType->setFieldLayout($fieldLayout);
     }
 }

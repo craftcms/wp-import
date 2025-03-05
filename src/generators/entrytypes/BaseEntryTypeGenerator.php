@@ -20,9 +20,22 @@ use yii\console\Exception;
  */
 abstract class BaseEntryTypeGenerator
 {
+    private static array $entryTypes = [];
+
     public static function get(): EntryType
     {
-        return Craft::$app->entries->getEntryTypeByUid(static::uid()) ?? static::create();
+        if (!isset(self::$entryTypes[static::class])) {
+            $entryType = Craft::$app->entries->getEntryTypeByUid(static::uid());
+            if ($entryType) {
+                self::populateAndSave($entryType);
+            } else {
+                $entryType = static::create();
+            }
+
+            self::$entryTypes[static::class] = $entryType;
+        }
+
+        return self::$entryTypes[static::class];
     }
 
     /**
@@ -37,21 +50,27 @@ abstract class BaseEntryTypeGenerator
     {
         $entryType = new EntryType();
         $entryType->uid = static::uid();
+        self::populateAndSave($entryType);
+        return $entryType;
+    }
+
+    private static function populateAndSave(EntryType $entryType): void
+    {
         static::populate($entryType);
 
-        if (Craft::$app->entries->getEntryTypeByHandle($entryType->handle) !== null) {
+        $existingEntryType = Craft::$app->entries->getEntryTypeByHandle($entryType->handle);
+        if ($existingEntryType && $existingEntryType->id !== $entryType->id) {
             $entryType->handle .= '_' . StringHelper::randomString(5);
         }
 
         /** @var Command $command */
         $command = Craft::$app->controller;
-        $command->do("Creating `$entryType->name` entry type", function() use ($entryType) {
+        $message = sprintf('%s the `%s` entry type', $entryType->id ? 'Saving' : 'Creating', $entryType->name);
+        $command->do($message, function() use ($entryType) {
             if (!Craft::$app->entries->saveEntryType($entryType)) {
                 throw new Exception(implode(', ', $entryType->getFirstErrors()));
             }
         });
-
-        return $entryType;
     }
 
     /**
