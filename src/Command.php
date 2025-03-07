@@ -39,6 +39,7 @@ use craft\wpimport\generators\entrytypes\Media as MediaEntryType;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Media as MediaField;
 use craft\wpimport\generators\fields\PostContent;
+use craft\wpimport\generators\fields\RichCaption;
 use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\importers\Comment;
 use craft\wpimport\importers\Comment as CommentImporter;
@@ -460,7 +461,7 @@ class Command extends Controller
             $nestedEntry->setFieldValue(MediaField::get()->handle, (array)$assetIds);
 
             if ($caption) {
-                $nestedEntry->setFieldValue(Caption::get()->handle, $caption);
+                $nestedEntry->setFieldValue(RichCaption::get()->handle, $caption);
             }
         });
     }

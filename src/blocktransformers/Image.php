@@ -39,7 +39,7 @@ class Image extends BaseBlockTransformer
         // See if there's a caption
         $node = (new Crawler($data['innerHTML']))->filter('figcaption');
         if ($node->count()) {
-            $caption = $node->text();
+            $caption = $node->html();
         } else {
             $caption = null;
         }

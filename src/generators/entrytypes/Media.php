@@ -16,6 +16,7 @@ use craft\models\FieldLayoutTab;
 use craft\wpimport\Command;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Media as MediaField;
+use craft\wpimport\generators\fields\RichCaption;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -52,7 +53,8 @@ class Media extends BaseEntryTypeGenerator
                 'providesThumbs' => true,
                 'includeInCards' => true,
             ]),
-            new CustomField(Caption::get(), [
+            new CustomField(RichCaption::get(), [
+                'label' => 'Caption',
                 'includeInCards' => true,
             ]),
         ], true);
