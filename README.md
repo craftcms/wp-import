@@ -102,6 +102,8 @@ You’ll be prompted for your WordPress site URL, as well as the username and ap
 >     external_links:
 >       - "ddev-router:my-wordpress-project.ddev.site"
 > ```
+> 
+> (Replace `my-wordpress-project` with your actual WordPress project name.)
 
 The command will then begin importing your content, creating content model components as needed, such as:
 
