@@ -104,6 +104,8 @@ You’ll be prompted for your WordPress site URL, as well as the username and ap
 > ```
 > 
 > (Replace `my-wordpress-project` with your actual WordPress project name.)
+> 
+> Then run `ddev restart`.
 
 The command will then begin importing your content, creating content model components as needed, such as:
 
