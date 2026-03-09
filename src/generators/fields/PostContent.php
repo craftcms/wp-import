@@ -27,7 +27,12 @@ class PostContent extends BaseFieldGenerator
         $field->name = 'Post Content';
         $field->handle = 'postContent';
         $field->ckeConfig = PostContentConfig::get()->uid;
-        $field->purifyHtml = false; // todo: allow video embeds in purifier config
+
+        // CKEditor 5.x removed/changed some legacy field properties, so only set this when supported.
+        if (property_exists($field, 'purifyHtml')) {
+            $field->purifyHtml = false; // todo: allow video embeds in purifier config
+        }
+
         $field->searchable = true;
         return $field;
     }
