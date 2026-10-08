@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\ckeditor\Field;
-use craft\wpimport\generators\ckeconfigs\PullQuote as PullQuoteConfig;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -26,7 +25,10 @@ class PullQuote extends BaseFieldGenerator
         $field = new Field();
         $field->name = 'Pull Quote';
         $field->handle = 'pullQuote';
-        $field->ckeConfig = PullQuoteConfig::get()->uid;
+        $field->toolbar = [
+            'heading', 'bold', 'italic', 'link', '|',
+            'code', 'strikethrough', 'subscript', 'superscript',
+        ];
         $field->searchable = true;
         return $field;
     }

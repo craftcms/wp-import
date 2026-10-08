@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\ckeditor\Field;
-use craft\wpimport\generators\ckeconfigs\PostContent as PostContentConfig;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -26,7 +25,13 @@ class PostContent extends BaseFieldGenerator
         $field = new Field();
         $field->name = 'Post Content';
         $field->handle = 'postContent';
-        $field->ckeConfig = PostContentConfig::get()->uid;
+        $field->toolbar = [
+            'heading', '|',
+            'bold', 'italic', 'link', '|',
+            'blockQuote', 'bulletedList', 'numberedList', 'codeBlock', '|',
+            'insertTable', 'mediaEmbed', 'htmlEmbed', 'horizontalLine', 'pageBreak', '|',
+            'createEntry', 'sourceEditing',
+        ];
         $field->purifyHtml = false; // todo: allow video embeds in purifier config
         $field->searchable = true;
         return $field;

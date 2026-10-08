@@ -9,7 +9,6 @@ namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
 use craft\ckeditor\Field;
-use craft\wpimport\generators\ckeconfigs\Simple;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -26,7 +25,7 @@ class RichCaption extends BaseFieldGenerator
         $field = new Field();
         $field->name = 'Rich Caption';
         $field->handle = 'richCaption';
-        $field->ckeConfig = Simple::get()->uid;
+        $field->toolbar = ['bold', 'italic', 'link'];
         $field->searchable = true;
         return $field;
     }
