@@ -33,7 +33,7 @@ ACF Fields | ✅ (see [Supported ACF Fields](#supported-acf-fields))
 
 ## Requirements
 
-Craft 5.5+ is required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) plugin. [Verbb Comments](https://plugins.craftcms.com/comments) is also required if you wish to import user comments.
+Craft 5.9+ is required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) 5.0+ plugin. [Verbb Comments](https://plugins.craftcms.com/comments) is also required if you wish to import user comments.
 
 ## Setup
 
