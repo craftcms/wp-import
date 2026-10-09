@@ -47,6 +47,9 @@ use craft\wpimport\importers\Media;
 use craft\wpimport\importers\PostType;
 use craft\wpimport\importers\Taxonomy;
 use craft\wpimport\importers\User as UserImporter;
+use CraftCms\UrlValidator\GuzzleMiddleware;
+use CraftCms\UrlValidator\UrlValidationException;
+use CraftCms\UrlValidator\UrlValidator as CraftUrlValidator;
 use DOMElement;
 use Generator;
 use GuzzleHttp\Client;
@@ -204,6 +207,12 @@ class Command extends Controller
     public bool $showSummary = true;
 
     /**
+     * @var string[] Hostnames that are allowed to resolve to private IP addresses, for WordPress sites or media
+     * hosted on an internal network (e.g. `my-wordpress-project.ddev.site`). A leading `*.` wildcard matches any subdomain.
+     */
+    public array $allowedPrivateHosts = [];
+
+    /**
      * @var BaseImporter[]
      */
     public array $importers;
@@ -249,6 +258,7 @@ class Command extends Controller
             'dryRun',
             'failFast',
             'showSummary',
+            'allowedPrivateHosts',
         ]);
     }
 
@@ -266,6 +276,19 @@ class Command extends Controller
         $this->client = Craft::createGuzzleClient([
             RequestOptions::VERIFY => false,
         ]);
+
+        try {
+            $urlValidator = new CraftUrlValidator(options: [
+                'allowedPrivateHosts' => $this->allowedPrivateHosts,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            throw new Exception("Invalid --allowed-private-hosts value: {$e->getMessage()}");
+        }
+
+        // validate every request URL (including redirects), and pin its hostname/port to the validated IPs
+        if (!GuzzleMiddleware::attach($this->client, $urlValidator)) {
+            throw new Exception('Request URLs can’t be validated, because the Guzzle client uses a custom handler.');
+        }
 
         $this->captureApiInfo();
         $this->loadImporters();
@@ -1256,6 +1279,8 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 RequestOptions::AUTH => [$this->username, $this->password],
                 RequestOptions::QUERY => $queryParams,
             ]);
+        } catch (UrlValidationException $e) {
+            throw new Exception("{$e->getMessage()} If this is an internal host, run the command with `--allowed-private-hosts=<hostname>`.");
         } catch (RequestException $e) {
             if ($e->getResponse()->getStatusCode() === 400) {
                 try {

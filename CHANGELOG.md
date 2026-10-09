@@ -1,5 +1,13 @@
 # Release Notes for Craft Generator
 
+## Unreleased
+
+> [!WARNING]
+> WordPress API and media URLs that resolve to private IP addresses are now rejected, unless their hostname is passed via the `--allowed-private-hosts` option.
+> See [Importing from Internal Hosts](https://github.com/craftcms/wp-import#importing-from-internal-hosts) on how to do that.
+
+- Fixed a [medium-severity](https://github.com/craftcms/cms/security/policy#severity--remediation) SSRF vulnerability.
+
 ## 2.1.0 - 2024-06-19
 - Generated plugins and modules now call `$this->attachEventHandlers()` directly from `init()`, and clarify when `onInit()` should be used.
 
