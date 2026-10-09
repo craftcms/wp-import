@@ -106,6 +106,8 @@ You’ll be prompted for your WordPress site URL, as well as the username and ap
 > (Replace `my-wordpress-project` with your actual WordPress project name.)
 > 
 > Then run `ddev restart`.
+>
+> If the WordPress site resolves to a private IP address, you’ll also need to pass its hostname via the `--allowed-private-hosts` option. (See [Importing from Internal Hosts](#importing-from-internal-hosts).)
 
 The command will then begin importing your content, creating content model components as needed, such as:
 
@@ -131,6 +133,21 @@ To see a full list of available options, run:
 ```sh
 ddev craft wp-import --help
 ```
+
+### Importing from Internal Hosts
+
+WordPress API URLs, media URLs (and any URLs they redirect to) that resolve to private IP addresses (e.g. `10.0.0.0/8`, `192.168.0.0/16`) are rejected by default. If your WordPress site or its media are hosted on an internal network, for example locally with DDEV, pass their hostnames via the `--allowed-private-hosts` option. Separate multiple hostnames with commas.
+
+Use an exact hostname, or a leading `*.` wildcard to match any subdomain (`*.site.testing.local` matches `api.site.testing.local`, but not `site.testing.local` itself):
+
+```sh
+ddev craft wp-import --allowed-private-hosts=my-wordpress-project.ddev.site,*.media.internal
+```
+
+Only the private IP range check is relaxed for these hosts. Loopback, link-local and cloud metadata addresses are still rejected.
+
+> [!WARNING]
+> Only list hostnames whose DNS you control, and list individual services rather than whole internal domains.
 
 ## Supported Block Types
 
