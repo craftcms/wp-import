@@ -26,12 +26,12 @@ use CraftCms\Cms\FieldLayout\LayoutElements\BaseField;
 use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
 use CraftCms\Cms\FieldLayout\LayoutElements\Heading;
 use CraftCms\Cms\FieldLayout\LayoutElements\Markdown;
+use CraftCms\Cms\ProjectConfig\ProjectConfig as ProjectConfigService;
 use CraftCms\Cms\Support\Arr;
 use CraftCms\Cms\Support\Facades\Elements;
 use CraftCms\Cms\Support\Facades\Fields;
 use CraftCms\Cms\Support\Facades\Path;
 use CraftCms\Cms\Support\Facades\Plugins;
-use CraftCms\Cms\Support\Facades\ProjectConfig;
 use CraftCms\Cms\Support\Facades\Users;
 use CraftCms\Cms\Support\File;
 use CraftCms\Cms\Support\Html;
@@ -349,7 +349,7 @@ class ImportCommand extends Command
             if ($this->dryRun) {
                 DB::rollBack();
                 // prevent project config changes from persisting
-                ProjectConfig::reset();
+                app(ProjectConfigService::class)->reset();
             }
         }
 
