@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5022fade1b6dc0354bc0ccdb9d964355",
+    "content-hash": "db85ac2dbe191f01766b493309b9994f",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -16370,8 +16370,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "craftcms/ckeditor": 20,
-        "craftcms/cms": 20
+        "craftcms/ckeditor": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
