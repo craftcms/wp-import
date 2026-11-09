@@ -1,22 +1,20 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\entrytypes;
+namespace CraftCms\WpImport\Generators\EntryTypes;
 
-use Craft;
-use craft\enums\Color;
-use craft\fieldlayoutelements\CustomField;
-use craft\models\EntryType;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
-use craft\wpimport\Command;
-use craft\wpimport\generators\fields\Caption;
-use craft\wpimport\generators\fields\Media as MediaField;
-use craft\wpimport\generators\fields\RichCaption;
+use CraftCms\Cms\Entry\Data\EntryType;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\Cms\Shared\Enums\Color;
+use CraftCms\WpImport\Console\ImportCommand;
+use CraftCms\WpImport\Generators\Fields\Media as MediaField;
+use CraftCms\WpImport\Generators\Fields\RichCaption;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -32,6 +30,7 @@ class Media extends BaseEntryTypeGenerator
     {
         $entryType = parent::create();
         static::addToPostContentField($entryType);
+
         return $entryType;
     }
 
@@ -46,8 +45,8 @@ class Media extends BaseEntryTypeGenerator
 
         $fieldLayout = $entryType->getFieldLayout();
 
-        /** @var Command $command */
-        $command = Craft::$app->controller;
+        /** @var ImportCommand $command */
+        $command = app(ImportCommand::class);
         $command->addElementsToLayout($fieldLayout, 'Content', [
             new CustomField(MediaField::get(), [
                 'providesThumbs' => true,

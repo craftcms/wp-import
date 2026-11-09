@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,8 +24,8 @@ class Twitter extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return Html::beginTag('figure', ['class' => 'media']) .
-            Html::tag('oembed', '', ['url' => $data['attrs']['url']]) .
+        return Html::beginTag('figure', ['class' => 'media']).
+            Html::tag('oembed', '', ['url' => $data['attrs']['url']]).
             Html::endTag('figure');
     }
 }

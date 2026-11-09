@@ -1,19 +1,21 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\errors;
+namespace CraftCms\WpImport\Exceptions;
 
+use RuntimeException;
 use Throwable;
-use yii\console\Exception;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class ImportException extends Exception
+class ImportException extends RuntimeException
 {
     public function __construct(
         public readonly string $slug,

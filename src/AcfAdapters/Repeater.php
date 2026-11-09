@@ -1,21 +1,22 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use Craft;
-use craft\base\FieldInterface;
-use craft\fields\Matrix;
-use craft\helpers\StringHelper;
-use craft\models\EntryType;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
-use craft\wpimport\BaseAcfAdapter;
-use yii\console\Exception;
+use CraftCms\Cms\Entry\Data\EntryType;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Matrix;
+use CraftCms\Cms\FieldLayout\FieldLayout;
+use CraftCms\Cms\FieldLayout\FieldLayoutTab;
+use CraftCms\Cms\Support\Facades\EntryTypes;
+use CraftCms\Cms\Support\Str;
+use RuntimeException;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -30,7 +31,7 @@ class Repeater extends BaseAcfAdapter
     public function create(array $data): FieldInterface
     {
         $entryType = $this->entryType($data);
-        $field = new Matrix();
+        $field = new Matrix;
         $field->setEntryTypes([$entryType]);
         $field->viewMode = ($data['pagination'] ?? false) ? Matrix::VIEW_MODE_INDEX : Matrix::VIEW_MODE_BLOCKS;
         if ($data['min'] ?? false) {
@@ -42,22 +43,23 @@ class Repeater extends BaseAcfAdapter
         if (($data['button_label'] ?? false) && $data['button_label'] !== 'Add Row') {
             $field->createButtonLabel = $data['button_label'];
         }
+
         return $field;
     }
 
     private function entryType(array $data): EntryType
     {
-        $entryTypeHandle = sprintf('acf_%s_%s', StringHelper::toHandle($data['name']), $data['ID']);
-        $entryType = Craft::$app->entries->getEntryTypeByHandle($entryTypeHandle);
+        $entryTypeHandle = sprintf('acf_%s_%s', Str::toHandle($data['name']), $data['ID']);
+        $entryType = EntryTypes::getEntryTypeByHandle($entryTypeHandle);
         if ($entryType) {
             return $entryType;
         }
 
-        $entryType = new EntryType();
+        $entryType = new EntryType;
         $entryType->name = $data['label'] ?: "Untitled ACF Field {$data['ID']}";
         $entryType->handle = $entryTypeHandle;
 
-        $fieldLayout = new FieldLayout();
+        $fieldLayout = new FieldLayout;
         $fieldLayout->setTabs([
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
@@ -67,9 +69,9 @@ class Repeater extends BaseAcfAdapter
         ]);
         $entryType->setFieldLayout($fieldLayout);
 
-        $this->command->do("Creating `$entryType->name` entry type", function() use ($entryType) {
-            if (!Craft::$app->entries->saveEntryType($entryType)) {
-                throw new Exception(implode(', ', $entryType->getFirstErrors()));
+        $this->command->do("Creating `$entryType->name` entry type", function () use ($entryType) {
+            if (! EntryTypes::saveEntryType($entryType)) {
+                throw new RuntimeException(implode(', ', $entryType->getFirstErrors()));
             }
         });
 
@@ -79,7 +81,8 @@ class Repeater extends BaseAcfAdapter
     public function normalizeValue(mixed $value, array $data): mixed
     {
         $entryType = $this->entryType($data);
-        return array_map(fn(array $row) => [
+
+        return array_map(fn (array $row) => [
             'type' => $entryType->handle,
             'fields' => $this->command->prepareAcfFieldValues($data['sub_fields'], $row),
         ], $value);

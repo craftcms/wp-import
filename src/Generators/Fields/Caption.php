@@ -1,14 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\fields\PlainText;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\PlainText;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -22,11 +24,12 @@ class Caption extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new PlainText();
+        $field = new PlainText;
         $field->name = 'Caption';
         $field->handle = 'caption';
         $field->multiline = true;
         $field->searchable = true;
+
         return $field;
     }
 }

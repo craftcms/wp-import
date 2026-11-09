@@ -1,15 +1,9 @@
 <?php
-/**
- * @link https://craftcms.com/
- * @copyright Copyright (c) Pixel & Tonic, Inc.
- * @license MIT
- */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\ckeditor\Field;
-use craft\wpimport\generators\ckeconfigs\PullQuote as PullQuoteConfig;
+use CraftCms\Ckeditor\Field;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,11 +17,15 @@ class PullQuote extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Field();
+        $field = new Field;
         $field->name = 'Pull Quote';
         $field->handle = 'pullQuote';
-        $field->ckeConfig = PullQuoteConfig::get()->uid;
+        $field->toolbar = [
+            'heading', 'bold', 'italic', 'link', '|',
+            'code', 'strikethrough', 'subscript', 'superscript',
+        ];
         $field->searchable = true;
+
         return $field;
     }
 }

@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\generators\entrytypes\Video as VideoEntryType;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Generators\EntryTypes\Video as VideoEntryType;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class VideoPressVideo extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function (Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(VideoEntryType::get()->id);
             $nestedEntry->setFieldValue('videoUrl', $data['attrs']['src']);
         });

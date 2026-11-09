@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Color;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Color;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,10 +24,11 @@ class ColorPicker extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Color();
+        $field = new Color;
         if ($data['default_value']) {
             $field->defaultColor = strtolower($data['default_value']);
         }
+
         return $field;
     }
 }

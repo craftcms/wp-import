@@ -1,19 +1,21 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\entrytypes;
+namespace CraftCms\WpImport\Generators\EntryTypes;
 
-use craft\enums\Color;
-use craft\fieldlayoutelements\CustomField;
-use craft\fieldlayoutelements\entries\EntryTitleField;
-use craft\models\EntryType;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
-use craft\wpimport\generators\fields\LinkUrl;
+use CraftCms\Cms\Entry\Data\EntryType;
+use CraftCms\Cms\FieldLayout\FieldLayout;
+use CraftCms\Cms\FieldLayout\FieldLayoutTab;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\Cms\FieldLayout\LayoutElements\Entries\EntryTitleField;
+use CraftCms\Cms\Shared\Enums\Color;
+use CraftCms\WpImport\Generators\Fields\LinkUrl;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -29,6 +31,7 @@ class Button extends BaseEntryTypeGenerator
     {
         $entryType = parent::create();
         static::addToPostContentField($entryType);
+
         return $entryType;
     }
 
@@ -41,13 +44,13 @@ class Button extends BaseEntryTypeGenerator
         $entryType->showStatusField = false;
         $entryType->showSlugField = false;
 
-        $fieldLayout = new FieldLayout();
+        $fieldLayout = new FieldLayout;
         $fieldLayout->setTabs([
             new FieldLayoutTab([
                 'layout' => $fieldLayout,
                 'name' => 'Content',
                 'elements' => [
-                    new EntryTitleField(),
+                    new EntryTitleField,
                     new CustomField(LinkUrl::get(), [
                         'handle' => 'buttonUrl',
                         'includeInCards' => true,

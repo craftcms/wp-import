@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: wp-import helper
  * Description: Makes additional data available via the REST API for the wp-import Craft CMS extension.
@@ -9,17 +10,16 @@
  * License:     GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
+defined('ABSPATH') or exit;
 
-defined('ABSPATH') or die;
-
-add_action('rest_api_init', function() {
-    $toArray = fn($object) => json_decode(json_encode($object), true);
+add_action('rest_api_init', function () {
+    $toArray = fn ($object) => json_decode(json_encode($object), true);
 
     /** @var WP_Post_Type[] $postTypes */
     $postTypes = array_filter(
         get_post_types([], 'objects'),
-        fn(WP_Post_Type $postType) => (
-            (!$postType->_builtin || in_array($postType->name, ['post', 'page'])) &&
+        fn (WP_Post_Type $postType) => (
+            (! $postType->_builtin || in_array($postType->name, ['post', 'page'])) &&
             strpos($postType->name, 'acf-') !== 0 &&
             strpos($postType->name, 'gblocks_') !== 0 &&
             strpos($postType->name, 'jp_') !== 0
@@ -28,7 +28,7 @@ add_action('rest_api_init', function() {
 
     foreach ($postTypes as $postType) {
         register_rest_field($postType->name, 'content_parsed', [
-            'get_callback' => fn($object) => $toArray(parse_blocks($object['content']['raw'])),
+            'get_callback' => fn ($object) => $toArray(parse_blocks($object['content']['raw'])),
             'schema' => [
                 'description' => 'Parsed content for the object.',
                 'type' => 'object',
@@ -39,7 +39,7 @@ add_action('rest_api_init', function() {
 
     register_rest_route('craftcms/v1', 'ping', [
         'methods' => WP_REST_Server::READABLE,
-        'callback' => fn() => [
+        'callback' => fn () => [
             'pong' => true,
         ],
         'permission_callback' => '__return_true',
@@ -47,34 +47,35 @@ add_action('rest_api_init', function() {
 
     register_rest_route('craftcms/v1', 'info', [
         'methods' => WP_REST_Server::READABLE,
-        'callback' => fn() => [
+        'callback' => fn () => [
             'field_groups' => function_exists('acf_get_field_groups')
-                ? array_map(function(array $fieldGroup) {
+                ? array_map(function (array $fieldGroup) {
                     $fieldGroup['fields'] = acf_get_fields($fieldGroup);
+
                     return $fieldGroup;
                 }, acf_get_field_groups())
                 : [],
             'permalink_structure' => get_option('permalink_structure'),
             'color_palette' => wp_get_global_settings(['color', 'palette']),
             'wysiwyg_toolbars' => class_exists('acf_field_wysiwyg')
-                ? (new acf_field_wysiwyg())->get_toolbars()
+                ? (new acf_field_wysiwyg)->get_toolbars()
                 : [],
         ],
-        'permission_callback' => fn() => current_user_can('manage_options'),
+        'permission_callback' => fn () => current_user_can('manage_options'),
     ]);
 
     // h/t https://wordpress.stackexchange.com/a/406877
     register_rest_route('craftcms/v1', 'post/(?P<id>\d+)', [
         'methods' => WP_REST_Server::READABLE,
-        'callback' => function(WP_REST_Request $request) use ($toArray) {
-            $id = (int)$request['id'];
+        'callback' => function (WP_REST_Request $request) {
+            $id = (int) $request['id'];
             $post = get_post($id);
             $post_type = get_post_type($post);
             $valid_post_types = get_post_types([
                 'public' => true,
                 'show_in_rest' => true,
             ]);
-            if (!in_array($post_type, $valid_post_types)) {
+            if (! in_array($post_type, $valid_post_types)) {
                 return new WP_Error('rest_post_invalid_id', __('Invalid post ID.'), ['status' => 404]);
             }
             $controller = new WP_REST_Posts_Controller($post_type);
@@ -82,8 +83,9 @@ add_action('rest_api_init', function() {
             if ($check !== true) {
                 return $check;
             }
+
             return $controller->get_item($request);
         },
-        'permission_callback' => fn() => current_user_can('manage_options'),
+        'permission_callback' => fn () => current_user_can('manage_options'),
     ]);
 });

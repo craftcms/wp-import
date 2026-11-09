@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Number as NumberField;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Number as NumberField;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class Number extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new NumberField();
+        $field = new NumberField;
         if ($data['min']) {
             $field->min = $data['min'];
         }
@@ -39,6 +40,7 @@ class Number extends BaseAcfAdapter
         if ($data['append']) {
             $field->suffix = $data['append'];
         }
+
         return $field;
     }
 }

@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Checkboxes;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Checkboxes;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class Checkbox extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Checkboxes();
+        $field = new Checkboxes;
         $field->options = [];
         foreach ($data['choices'] as $value => $label) {
             $field->options[] = [
@@ -34,7 +35,8 @@ class Checkbox extends BaseAcfAdapter
                     : $value === $data['default_value'],
             ];
         }
-        $field->customOptions = (bool)$data['allow_custom'];
+        $field->customOptions = (bool) $data['allow_custom'];
+
         return $field;
     }
 }

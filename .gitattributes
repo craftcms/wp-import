@@ -3,11 +3,18 @@
 /.gitattributes export-ignore
 /.github/ export-ignore
 /.gitignore export-ignore
+/.lintstagedrc.json export-ignore
+/.prettierignore export-ignore
+/.prettierrc.json export-ignore
 /CHANGELOG.md export-ignore
 /README.md export-ignore
+/UPGRADE.md export-ignore
+/cli.png export-ignore
 /composer.lock export-ignore
-/ecs.php export-ignore
+/package.json export-ignore
 /phpstan.neon export-ignore
+/phpunit.xml export-ignore
+/pint.json export-ignore
 /stubs/ export-ignore
 /tests/ export-ignore
 

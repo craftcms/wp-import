@@ -1,19 +1,22 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\entrytypes;
+namespace CraftCms\WpImport\Generators\EntryTypes;
 
-use Craft;
-use craft\ckeditor\Field;
-use craft\helpers\StringHelper;
-use craft\models\EntryType;
-use craft\wpimport\Command;
-use craft\wpimport\generators\fields\PostContent;
-use yii\console\Exception;
+use CraftCms\Ckeditor\Field;
+use CraftCms\Cms\Entry\Data\EntryType;
+use CraftCms\Cms\Support\Facades\EntryTypes;
+use CraftCms\Cms\Support\Facades\Fields;
+use CraftCms\Cms\Support\Str;
+use CraftCms\WpImport\Console\ImportCommand;
+use CraftCms\WpImport\Generators\Fields\PostContent;
+use RuntimeException;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -24,8 +27,8 @@ abstract class BaseEntryTypeGenerator
 
     public static function get(): EntryType
     {
-        if (!isset(self::$entryTypes[static::class])) {
-            $entryType = Craft::$app->entries->getEntryTypeByUid(static::uid());
+        if (! isset(self::$entryTypes[static::class])) {
+            $entryType = EntryTypes::getEntryTypeByUid(static::uid());
             if ($entryType) {
                 self::populateAndSave($entryType);
             } else {
@@ -48,9 +51,10 @@ abstract class BaseEntryTypeGenerator
      */
     protected static function create(): EntryType
     {
-        $entryType = new EntryType();
+        $entryType = new EntryType;
         $entryType->uid = static::uid();
         self::populateAndSave($entryType);
+
         return $entryType;
     }
 
@@ -58,17 +62,17 @@ abstract class BaseEntryTypeGenerator
     {
         static::populate($entryType);
 
-        $existingEntryType = Craft::$app->entries->getEntryTypeByHandle($entryType->handle);
+        $existingEntryType = EntryTypes::getEntryTypeByHandle($entryType->handle);
         if ($existingEntryType && $existingEntryType->id !== $entryType->id) {
-            $entryType->handle .= '_' . StringHelper::randomString(5);
+            $entryType->handle .= '_'.Str::random(5);
         }
 
-        /** @var Command $command */
-        $command = Craft::$app->controller;
+        /** @var ImportCommand $command */
+        $command = app(ImportCommand::class);
         $message = sprintf('%s the `%s` entry type', $entryType->id ? 'Saving' : 'Creating', $entryType->name);
-        $command->do($message, function() use ($entryType) {
-            if (!Craft::$app->entries->saveEntryType($entryType)) {
-                throw new Exception(implode(', ', $entryType->getFirstErrors()));
+        $command->do($message, function () use ($entryType) {
+            if (! EntryTypes::saveEntryType($entryType)) {
+                throw new RuntimeException(implode(', ', $entryType->getFirstErrors()));
             }
         });
     }
@@ -90,11 +94,11 @@ abstract class BaseEntryTypeGenerator
         $entryTypes[] = $entryType;
         $field->setEntryTypes($entryTypes);
 
-        /** @var Command $command */
-        $command = Craft::$app->controller;
-        $command->do("Updating `$field->name` field", function() use ($field) {
-            if (!Craft::$app->fields->saveField($field)) {
-                throw new Exception(implode(', ', $field->getFirstErrors()));
+        /** @var ImportCommand $command */
+        $command = app(ImportCommand::class);
+        $command->do("Updating `$field->name` field", function () use ($field) {
+            if (! Fields::saveField($field)) {
+                throw new RuntimeException(implode(', ', $field->getFirstErrors()));
             }
         });
     }

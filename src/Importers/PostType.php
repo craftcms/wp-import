@@ -1,44 +1,50 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\importers;
+namespace CraftCms\WpImport\Importers;
 
-use Craft;
-use craft\base\Element;
-use craft\base\ElementInterface;
-use craft\elements\Entry;
-use craft\elements\User as UserElement;
-use craft\enums\CmsEdition;
-use craft\enums\Color;
-use craft\fieldlayoutelements\CustomField;
-use craft\fieldlayoutelements\entries\EntryTitleField;
-use craft\helpers\DateTimeHelper;
-use craft\helpers\Inflector;
-use craft\helpers\StringHelper;
-use craft\models\EntryType;
-use craft\models\Section;
-use craft\models\Section_SiteSettings;
-use craft\wpimport\BaseConfigurableImporter;
-use craft\wpimport\Command;
-use craft\wpimport\generators\fields\Caption;
-use craft\wpimport\generators\fields\Color as ColorField;
-use craft\wpimport\generators\fields\Comments;
-use craft\wpimport\generators\fields\Description;
-use craft\wpimport\generators\fields\Format;
-use craft\wpimport\generators\fields\Media as MediaField;
-use craft\wpimport\generators\fields\PostContent;
-use craft\wpimport\generators\fields\Sticky;
-use craft\wpimport\generators\fields\Tags;
-use craft\wpimport\generators\fields\Template;
-use craft\wpimport\generators\fields\WpId;
-use craft\wpimport\generators\fields\WpTitle;
+use CraftCms\Cms\Edition;
+use CraftCms\Cms\Element\Contracts\ElementInterface;
+use CraftCms\Cms\Element\Queries\Contracts\ElementQueryInterface;
+use CraftCms\Cms\Element\Validation\ElementRules;
+use CraftCms\Cms\Entry\Data\EntryType;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\Cms\FieldLayout\LayoutElements\Entries\EntryTitleField;
+use CraftCms\Cms\Section\Data\Section;
+use CraftCms\Cms\Section\Data\SectionSiteSettings;
+use CraftCms\Cms\Section\Enums\SectionType;
+use CraftCms\Cms\Shared\Enums\Color;
+use CraftCms\Cms\Support\DateTimeHelper;
+use CraftCms\Cms\Support\Facades\Elements;
+use CraftCms\Cms\Support\Facades\EntryTypes;
+use CraftCms\Cms\Support\Facades\Sections;
+use CraftCms\Cms\Support\Facades\Sites;
+use CraftCms\Cms\Support\Str;
+use CraftCms\Cms\User\Elements\User as UserElement;
+use CraftCms\WpImport\Console\ImportCommand;
+use CraftCms\WpImport\Generators\Fields\Caption;
+use CraftCms\WpImport\Generators\Fields\Color as ColorField;
+use CraftCms\WpImport\Generators\Fields\Description;
+use CraftCms\WpImport\Generators\Fields\Format;
+use CraftCms\WpImport\Generators\Fields\Media as MediaField;
+use CraftCms\WpImport\Generators\Fields\PostContent;
+use CraftCms\WpImport\Generators\Fields\Sticky;
+use CraftCms\WpImport\Generators\Fields\Tags;
+use CraftCms\WpImport\Generators\Fields\Template;
+use CraftCms\WpImport\Generators\Fields\WpId;
+use CraftCms\WpImport\Generators\Fields\WpTitle;
 use Illuminate\Support\Collection;
+use RuntimeException;
 use Throwable;
-use yii\console\Exception;
+
+use function CraftCms\Cms\t;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -46,11 +52,12 @@ use yii\console\Exception;
 class PostType extends BaseConfigurableImporter
 {
     private EntryType $entryType;
+
     private Section $section;
 
-    public function __construct(private array $data, Command $command, array $config = [])
+    public function __construct(private array $data, ImportCommand $command)
     {
-        parent::__construct($command, $config);
+        parent::__construct($command);
     }
 
     public function slug(): string
@@ -65,7 +72,7 @@ class PostType extends BaseConfigurableImporter
 
     public function label(): string
     {
-        return Inflector::pluralize(StringHelper::titleize(str_replace('_', ' ', $this->data['labels']['name'])));
+        return Str::plural(Str::title(str_replace('_', ' ', $this->data['labels']['name'])));
     }
 
     public function typeLabel(): string
@@ -82,6 +89,7 @@ class PostType extends BaseConfigurableImporter
             $params['orderby'] = 'menu_order';
             $params['order'] = 'asc';
         }
+
         return $params;
     }
 
@@ -93,16 +101,17 @@ class PostType extends BaseConfigurableImporter
     public function populate(ElementInterface $element, array $data): void
     {
         /** @var Entry $element */
+        /** @var Entry $element */
         $element->sectionId = $this->section()->id;
         $element->setTypeId($this->entryType()->id);
 
-        if ($this->section()->type === Section::TYPE_STRUCTURE && $data['parent']) {
+        if ($this->section()->type === SectionType::Structure && $data['parent']) {
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
-        if (Craft::$app->edition === CmsEdition::Solo) {
+        if (Edition::get() === Edition::Solo) {
             $element->setAuthorId(UserElement::find()->admin()->limit(1)->ids()[0]);
-        } elseif (!empty($data['author'])) {
+        } elseif (! empty($data['author'])) {
             try {
                 $element->setAuthorId($this->command->import(User::SLUG, $data['author'], [
                     'roles' => User::ALL_ROLES,
@@ -112,7 +121,7 @@ class PostType extends BaseConfigurableImporter
         }
 
         $title = $data['title']['raw'] ?? null;
-        $element->title = $title !== null ? StringHelper::safeTruncate($title, 255) : null;
+        $element->title = $title !== null ? Str::limit($title, 255, '', true) : null;
         $element->setFieldValue(WpTitle::get()->handle, $title);
         $element->slug = $data['slug'];
         $element->postDate = DateTimeHelper::toDateTime($data['date_gmt']);
@@ -120,7 +129,7 @@ class PostType extends BaseConfigurableImporter
         $element->enabled = in_array($data['status'], ['publish', 'future']);
 
         $fieldValues = [
-            Template::get()->handle => StringHelper::removeRight($data['template'] ?? '', '.php'),
+            Template::get()->handle => Str::chopEnd($data['template'] ?? '', '.php'),
         ];
         if ($this->supports('excerpt')) {
             $fieldValues['excerpt'] = $data['excerpt']['raw'] ?? null;
@@ -128,12 +137,12 @@ class PostType extends BaseConfigurableImporter
         if ($this->supports('post-formats')) {
             $fieldValues[Format::get()->handle] = $data['format'] ?? null;
         }
-        if (!$this->hierarchical()) {
+        if (! $this->hierarchical()) {
             $fieldValues[Sticky::get()->handle] = $data['sticky'] ?? false;
         }
         if ($this->hasTaxonomy('post_tag')) {
             $fieldValues[Tags::get()->handle] = Collection::make($data['tags'])
-                ->map(function(int $id) {
+                ->map(function (int $id) {
                     try {
                         return $this->command->import(Tag::SLUG, $id);
                     } catch (Throwable) {
@@ -149,11 +158,6 @@ class PostType extends BaseConfigurableImporter
             } catch (Throwable) {
             }
         }
-        if ($this->supports('comments') && $this->command->importComments) {
-            $fieldValues[Comments::get()->handle] = [
-                'commentEnabled' => ($data['comment_status'] ?? null) === 'open',
-            ];
-        }
 
         foreach ($this->data['taxonomies'] as $taxonomy) {
             if ($taxonomy === 'post_tag') {
@@ -166,7 +170,7 @@ class PostType extends BaseConfigurableImporter
                 'category' => $data['categories'],
                 default => $data[$taxonomy],
             })
-                ->map(function(int $id) use ($importer) {
+                ->map(function (int $id) use ($importer) {
                     try {
                         return $this->command->import($importer->slug(), $id);
                     } catch (Throwable) {
@@ -177,7 +181,7 @@ class PostType extends BaseConfigurableImporter
                 ->all();
         }
 
-        if (!empty($data['acf'])) {
+        if (! empty($data['acf'])) {
             $fieldValues = array_merge($fieldValues, $this->command->prepareAcfFieldValues(
                 $this->command->fieldsForEntity('post_type', $this->slug()),
                 $data['acf'],
@@ -191,16 +195,21 @@ class PostType extends BaseConfigurableImporter
             }
         }
 
-        if (!empty($data['content_parsed'])) {
+        if (! empty($data['content_parsed'])) {
             // save the entry first, so it gets an ID
-            if (!$element->id) {
-                $element->setScenario(Element::SCENARIO_ESSENTIALS);
-                if (!Craft::$app->elements->saveElement($element)) {
-                    throw new Exception(implode(', ', $element->getFirstErrors()));
+            if (! $element->id) {
+                $element->ruleset->useScenario(ElementRules::SCENARIO_ESSENTIALS);
+                if (! Elements::saveElement($element)) {
+                    throw new RuntimeException(implode(', ', $element->getFirstErrors()));
                 }
             }
             $element->setFieldValue(PostContent::get()->handle, $this->command->renderBlocks($data['content_parsed'], $element));
         }
+    }
+
+    public function existingElementQuery(): ElementQueryInterface
+    {
+        return Entry::find()->sectionId($this->section()->id);
     }
 
     public function entryType(): EntryType
@@ -209,12 +218,12 @@ class PostType extends BaseConfigurableImporter
             return $this->entryType;
         }
 
-        $entryTypeHandle = StringHelper::toHandle($this->data['labels']['singular_name']);
-        $entryType = Craft::$app->entries->getEntryTypeByHandle($entryTypeHandle);
-        $newEntryType = !$entryType;
+        $entryTypeHandle = Str::toHandle($this->data['labels']['singular_name']);
+        $entryType = EntryTypes::getEntryTypeByHandle($entryTypeHandle);
+        $newEntryType = ! $entryType;
 
         if ($newEntryType) {
-            $entryType = new EntryType();
+            $entryType = new EntryType;
             $entryType->name = $this->data['labels']['singular_name'];
             $entryType->handle = $entryTypeHandle;
             $entryType->icon = $this->command->normalizeIcon($this->data['icon'] ?? null) ?? 'pen-nib';
@@ -242,13 +251,10 @@ class PostType extends BaseConfigurableImporter
                 'handle' => 'excerpt',
             ]);
         }
-        if ($this->supports('comments') && $this->command->importComments) {
-            $metaElements[] = new CustomField(Comments::get());
-        }
         if ($this->supports('post-formats')) {
             $metaElements[] = new CustomField(Format::get());
         }
-        if (!$this->hierarchical()) {
+        if (! $this->hierarchical()) {
             $metaElements[] = new CustomField(Sticky::get());
         }
 
@@ -290,9 +296,9 @@ class PostType extends BaseConfigurableImporter
         $this->command->addElementsToLayout($fieldLayout, 'Meta', $metaElements);
 
         $message = sprintf('%s the `%s` entry type', $newEntryType ? 'Creating' : 'Updating', $entryType->name);
-        $this->command->do($message, function() use ($entryType) {
-            if (!Craft::$app->entries->saveEntryType($entryType)) {
-                throw new Exception(implode(', ', $entryType->getFirstErrors()));
+        $this->command->do($message, function () use ($entryType) {
+            if (! EntryTypes::saveEntryType($entryType)) {
+                throw new RuntimeException(implode(', ', $entryType->getFirstErrors()));
             }
         });
 
@@ -305,21 +311,21 @@ class PostType extends BaseConfigurableImporter
             return $this->section;
         }
 
-        $sectionHandle = StringHelper::toHandle($this->label());
-        $section = Craft::$app->entries->getSectionByHandle($sectionHandle);
+        $sectionHandle = Str::toHandle($this->label());
+        $section = Sections::getSectionByHandle($sectionHandle);
         if ($section) {
             return $this->section = $section;
         }
 
-        $section = new Section();
+        $section = new Section;
         $section->name = $this->label();
         $section->handle = $sectionHandle;
-        $section->type = $this->hierarchical() ? Section::TYPE_STRUCTURE : Section::TYPE_CHANNEL;
+        $section->type = $this->hierarchical() ? SectionType::Structure : SectionType::Channel;
         $section->enableVersioning = $this->supports('revisions');
         $section->setEntryTypes([$this->entryType()]);
         $section->setSiteSettings([
-            new Section_SiteSettings([
-                'siteId' => Craft::$app->sites->getPrimarySite()->id,
+            new SectionSiteSettings([
+                'siteId' => Sites::getPrimarySite()->id,
                 'hasUrls' => true,
                 'uriFormat' => strtr(trim($this->command->wpInfo['permalink_structure'], '/'), [
                     '%year%' => "{postDate|date('Y')}",
@@ -338,16 +344,16 @@ class PostType extends BaseConfigurableImporter
         ]);
         $section->previewTargets = [
             [
-                'label' => Craft::t('app', 'Primary {type} page', [
+                'label' => t('Primary {type} page', [
                     'type' => Entry::lowerDisplayName(),
                 ]),
                 'urlFormat' => '{url}',
             ],
         ];
 
-        $this->command->do("Creating `$section->name` section", function() use ($section) {
-            if (!Craft::$app->entries->saveSection($section)) {
-                throw new Exception(implode(', ', $section->getFirstErrors()));
+        $this->command->do("Creating `$section->name` section", function () use ($section) {
+            if (! Sections::saveSection($section)) {
+                throw new RuntimeException(implode(', ', $section->getFirstErrors()));
             }
         });
 

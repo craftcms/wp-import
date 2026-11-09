@@ -1,16 +1,17 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Dropdown;
-use craft\fields\MultiSelect;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Dropdown;
+use CraftCms\Cms\Field\MultiSelect;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -24,7 +25,7 @@ class Select extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = $data['multiple'] ? new MultiSelect() : new Dropdown();
+        $field = $data['multiple'] ? new MultiSelect : new Dropdown;
         $field->options = [];
         foreach ($data['choices'] as $value => $label) {
             $field->options[] = [
@@ -35,6 +36,7 @@ class Select extends BaseAcfAdapter
                     : $value === $data['default_value'],
             ];
         }
+
         return $field;
     }
 }

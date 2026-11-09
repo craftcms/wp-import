@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Dropdown;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Dropdown;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class ButtonGroup extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Dropdown();
+        $field = new Dropdown;
         $field->options = [];
         foreach ($data['choices'] as $value => $label) {
             $field->options[] = [
@@ -34,6 +35,7 @@ class ButtonGroup extends BaseAcfAdapter
                     : $value === $data['default_value'],
             ];
         }
+
         return $field;
     }
 }

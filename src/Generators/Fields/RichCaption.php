@@ -1,15 +1,9 @@
 <?php
-/**
- * @link https://craftcms.com/
- * @copyright Copyright (c) Pixel & Tonic, Inc.
- * @license MIT
- */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\ckeditor\Field;
-use craft\wpimport\generators\ckeconfigs\Simple;
+use CraftCms\Ckeditor\Field;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,11 +17,12 @@ class RichCaption extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Field();
+        $field = new Field;
         $field->name = 'Rich Caption';
         $field->handle = 'richCaption';
-        $field->ckeConfig = Simple::get()->uid;
+        $field->toolbar = ['bold', 'italic', 'link'];
         $field->searchable = true;
+
         return $field;
     }
 }

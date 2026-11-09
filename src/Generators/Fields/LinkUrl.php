@@ -1,15 +1,17 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\fields\Link;
-use craft\fields\linktypes\Url;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Link;
+use CraftCms\Cms\Field\LinkTypes\Url;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,10 +25,11 @@ class LinkUrl extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Link();
+        $field = new Link;
         $field->name = 'Link URL';
         $field->handle = 'linkUrl';
         $field->types = [Url::id()];
+
         return $field;
     }
 }

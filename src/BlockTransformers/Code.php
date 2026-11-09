@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -26,14 +27,15 @@ class Code extends BaseBlockTransformer
     {
         // `<pre class="wp-block-code"><code>` → `<pre><code>`
         $node = (new Crawler($data['innerHTML']))->filter('code');
-        if (!$node->count()) {
+        if (! $node->count()) {
             return '';
         }
         $code = $node->html();
-        return Html::beginTag('pre') .
+
+        return Html::beginTag('pre').
             Html::tag('code', $code, [
                 'class' => sprintf('language-%s', $this->detectLanguage($code)),
-            ]) .
+            ]).
             Html::endTag('pre');
     }
 
@@ -52,6 +54,7 @@ class Code extends BaseBlockTransformer
         if (str_contains($code, '<?')) {
             return 'php';
         }
+
         return 'plaintext';
     }
 }

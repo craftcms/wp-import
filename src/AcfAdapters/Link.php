@@ -1,17 +1,18 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Link as LinkField;
-use craft\fields\linktypes\Entry;
-use craft\fields\linktypes\Url;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Link as LinkField;
+use CraftCms\Cms\Field\LinkTypes\Entry;
+use CraftCms\Cms\Field\LinkTypes\Url;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -25,10 +26,13 @@ class Link extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new LinkField();
+        // Craft 6 maps this to `advancedFields` from the constructor config
+        $field = new LinkField([
+            'showTargetField' => true,
+        ]);
         $field->types = [Url::id(), Entry::id()];
         $field->showLabelField = true;
-        $field->showTargetField = true;
+
         return $field;
     }
 

@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\importers\Media;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Importers\Media;
 use Throwable;
 
 /**
@@ -25,12 +26,12 @@ class GBMedia extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         $id = $data['attrs']['mediaId'] ?? null;
-        if (!$id) {
+        if (! $id) {
             return '';
         }
 
         try {
-            if (!empty($data['attrs']['htmlAttributes']['src'])) {
+            if (! empty($data['attrs']['htmlAttributes']['src'])) {
                 $assetId = $this->command->import(Media::SLUG, [
                     'id' => $id,
                     'source_url' => $data['attrs']['htmlAttributes']['src'],

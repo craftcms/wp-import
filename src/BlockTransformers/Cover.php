@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\importers\Media;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Importers\Media;
 use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
 
@@ -25,7 +26,7 @@ class Cover extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        if (!$entry->getFieldLayout()->getFieldByhandle('coverPhoto')) {
+        if (! $entry->getFieldLayout()->getFieldByhandle('coverPhoto')) {
             return '';
         }
 
@@ -48,7 +49,7 @@ class Cover extends BaseBlockTransformer
             }
         }
 
-        if (!empty($data['attrs']['overlayColor'])) {
+        if (! empty($data['attrs']['overlayColor'])) {
             $entry->setFieldValue('coverOverlayColor', $this->command->normalizeColor($data['attrs']['overlayColor']));
         }
 

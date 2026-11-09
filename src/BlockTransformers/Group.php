@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\generators\entrytypes\Group as GroupEntryType;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Generators\EntryTypes\Group as GroupEntryType;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class Group extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function (Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(GroupEntryType::get()->id);
             $nestedEntry->setFieldValue(
                 'backgroundColor',

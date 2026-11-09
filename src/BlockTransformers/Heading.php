@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -27,9 +28,10 @@ class Heading extends BaseBlockTransformer
         // render a new heading tag without `class="wp-block-heading"`
         // (can't rely on `$data['attrs']['level']` unfortunately)
         $node = (new Crawler($data['innerHTML']))->filter('h1,h2,h3,h4,h5,h6');
-        if (!$node->count()) {
+        if (! $node->count()) {
             return '';
         }
+
         return Html::tag($node->nodeName(), $node->html());
     }
 }

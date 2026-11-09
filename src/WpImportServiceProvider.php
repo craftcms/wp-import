@@ -1,26 +1,32 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace CraftCms\WpImport;
 
-use yii\base\BootstrapInterface;
-use yii\console\Application as ConsoleApp;
+use CraftCms\WpImport\Console\ImportCommand;
+use Illuminate\Support\ServiceProvider;
 
 /**
- * WP Import Yii2 Extension
+ * Registers the `wp-import` command.
  *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class Extension implements BootstrapInterface
+class WpImportServiceProvider extends ServiceProvider
 {
-    public function bootstrap($app)
+    public function boot(): void
     {
-        if ($app instanceof ConsoleApp) {
-            $app->controllerMap['wp-import'] = Command::class;
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ImportCommand::class,
+            ]);
         }
     }
 }

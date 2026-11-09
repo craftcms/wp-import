@@ -1,52 +1,47 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use Craft;
-use craft\elements\Entry;
-use yii\base\BaseObject;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Console\ImportCommand;
 
 /**
  * Base block transformer class
  *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-abstract class BaseBlockTransformer extends BaseObject
+abstract class BaseBlockTransformer
 {
     /**
-     * Returns the block name identified by the parsed block data.
-     *
-     * @return string
+     * Returns the block name this transformer handles (e.g. `core/paragraph`).
      */
     abstract public static function blockName(): string;
 
     public function __construct(
-        protected Command $command,
-        array $config = [],
-    ) {
-        parent::__construct($config);
-    }
+        protected ImportCommand $command,
+    ) {}
 
     /**
-     * Renders the given block data.
+     * Renders a block’s HTML.
      *
-     * @param array $data
-     * @param Entry $entry
-     * @return string
+     * @param  array  $data  The block data
+     * @param  Entry  $entry  The entry being imported
      */
     abstract public function render(array $data, Entry $entry): string;
 
     /**
      * Creates a nested entry.
      *
-     * @param Entry $entry
      * @return string The `<craft-entry>` tag to be returned by `render()`
-     * @deprecated
      */
     protected function createNestedEntry(Entry $entry, callable $populate): string
     {
@@ -55,9 +50,6 @@ abstract class BaseBlockTransformer extends BaseObject
 
     /**
      * Saves a nested entry.
-     *
-     * @param Entry $entry
-     * @deprecated
      */
     protected function saveNestedEntry(Entry $entry): void
     {

@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\generators\entrytypes\PullQuote as PullQuoteEntryType;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Generators\EntryTypes\PullQuote as PullQuoteEntryType;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -28,18 +29,18 @@ class PullQuote extends BaseBlockTransformer
         $pNodes = $crawler->filter('p');
         $citeNodes = $crawler->filter('cite');
 
-        if (!$pNodes->count() && !$citeNodes->count()) {
+        if (! $pNodes->count() && ! $citeNodes->count()) {
             return '';
         }
 
         $html = '';
-        $pNodes->each(function(Crawler $node) use (&$html) {
+        $pNodes->each(function (Crawler $node) use (&$html) {
             $html .= $node->outerHtml();
         });
 
         $cite = $citeNodes->text();
 
-        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($html, $cite) {
+        return $this->command->createNestedEntry($entry, function (Entry $nestedEntry) use ($html, $cite) {
             $nestedEntry->setTypeId(PullQuoteEntryType::get()->id);
             $nestedEntry->setFieldValue('pullQuote', $html);
             $nestedEntry->setFieldvalue('citation', $cite);

@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Entries;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Entries;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,18 +24,19 @@ class Relationship extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Entries();
+        $field = new Entries;
         if ($data['min']) {
             $field->minRelations = $data['min'];
         }
         if ($data['max']) {
             $field->maxRelations = $data['max'];
         }
+
         return $field;
     }
 
     public function normalizeValue(mixed $value, array $data): mixed
     {
-        return array_map(fn(int $id) => $this->command->importPost($id), $value);
+        return array_map(fn (int $id) => $this->command->importPost($id), $value);
     }
 }

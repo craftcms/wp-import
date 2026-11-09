@@ -1,15 +1,15 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Console;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +23,8 @@ class Block extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        $this->command->output('`core/block` blocks aren’t supported ', Console::FG_YELLOW);
+        $this->command->warn('`core/block` blocks aren’t supported');
+
         return '';
     }
 }

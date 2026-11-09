@@ -1,51 +1,48 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace CraftCms\WpImport\Importers;
 
-use craft\base\Element;
-use craft\base\ElementInterface;
-use yii\base\BaseObject;
+use CraftCms\Cms\Element\Contracts\ElementInterface;
+use CraftCms\Cms\Element\Queries\Contracts\ElementQueryInterface;
+use CraftCms\WpImport\Console\ImportCommand;
 
 /**
  * Base importer class
  *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-abstract class BaseImporter extends BaseObject
+abstract class BaseImporter
 {
     public function __construct(
-        protected Command $command,
-        array $config = [],
-    ) {
-        parent::__construct($config);
-    }
+        protected ImportCommand $command,
+    ) {}
 
     /**
-     * Returns the content type slug (e.g. `posts`).
-     *
-     * @return string
+     * Returns the importer’s slug, which is used to identify it from the `--type` option.
      */
     abstract public function slug(): string;
 
     /**
-     * Returns the REST API URI for this content type.
+     * Returns the API URI (sans `wp-json/`) to fetch items from.
      */
     abstract public function apiUri(): string;
 
     /**
-     * Returns the content type label (e.g. `Posts`).
+     * Returns the importer’s human-facing label.
      */
     abstract public function label(): string;
 
     /**
-     * Returns query params that should be passed to the API.
-     *
-     * @return array
+     * Returns any query params that should be sent with API requests.
      */
     public function queryParams(): array
     {
@@ -53,18 +50,14 @@ abstract class BaseImporter extends BaseObject
     }
 
     /**
-     * Returns the element type imported items will resolve to.
+     * Returns the element type imported items will be saved as.
      *
-     * @return string
-     * @phpstan-return class-string<ElementInterface>
+     * @return class-string<ElementInterface>
      */
     abstract public function elementType(): string;
 
     /**
-     * Returns whether importing this content type is supported.
-     *
-     * @param string|null $reason
-     * @return bool
+     * Returns whether the importer is supported.
      */
     public function supported(?string &$reason): bool
     {
@@ -72,17 +65,20 @@ abstract class BaseImporter extends BaseObject
     }
 
     /**
-     * Prepares the system to import items of this type.
+     * Returns the query used to find elements that were already imported.
      */
-    public function prep(): void
+    public function existingElementQuery(): ElementQueryInterface
     {
+        return $this->elementType()::find();
     }
 
     /**
-     * Returns an existing element based on the given data, if there is one.
-     *
-     * @param array $data
-     * @return ElementInterface|null
+     * Prepares the system for the first import of this type.
+     */
+    public function prep(): void {}
+
+    /**
+     * Attempts to find an existing element for the given item data.
      */
     public function find(array $data): ?ElementInterface
     {
@@ -90,10 +86,7 @@ abstract class BaseImporter extends BaseObject
     }
 
     /**
-     * Populates an element with the given API data.
-     *
-     * @param ElementInterface $element The element to populate
-     * @param array $data The item data
+     * Populates an element with the given item data.
      */
     abstract public function populate(ElementInterface $element, array $data): void;
 }

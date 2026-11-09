@@ -1,5 +1,17 @@
 # Release Notes for Craft Generator
 
+## Unreleased
+
+- wp-import now requires Craft CMS 6.0 or later and PHP 8.5 or later, and runs natively on Craft 6 without the `craftcms/yii2-adapter` package. ([UPGRADE.md](UPGRADE.md))
+- wp-import is now a Laravel package, and registers the `wp-import` Artisan command through package discovery.
+- The package’s classes moved from the `craft\wpimport` namespace to `CraftCms\WpImport`.
+- Added `CraftCms\WpImport\Events\ImporterTypesResolving`, `BlockTransformerTypesResolving`, and `AcfAdapterTypesResolving`, which replace the `EVENT_REGISTER_*` events.
+- WordPress categories, tags, and custom taxonomies are now imported as entries, in Structure or Channel sections, and related to posts with Entries fields.
+- The “WordPress Content” volume now uses a filesystem disk (`public` by default). Added the `--disk` option.
+- CKEditor toolbars are now set on the fields themselves, rather than in CKEditor configs.
+- Comments are no longer imported.
+- Custom components now go in `config/craft/wp-import/`.
+
 ## 2.2.0 - 2026-10-11
 
 > [!WARNING]

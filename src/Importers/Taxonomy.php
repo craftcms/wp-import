@@ -1,41 +1,59 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\importers;
+namespace CraftCms\WpImport\Importers;
 
-use Craft;
-use craft\base\ElementInterface;
-use craft\elements\Category;
-use craft\fieldlayoutelements\CustomField;
-use craft\fieldlayoutelements\TitleField;
-use craft\fields\Categories;
-use craft\helpers\StringHelper;
-use craft\models\CategoryGroup;
-use craft\models\CategoryGroup_SiteSettings;
-use craft\models\Site;
-use craft\wpimport\BaseConfigurableImporter;
-use craft\wpimport\Command;
-use craft\wpimport\generators\fields\Description;
-use craft\wpimport\generators\fields\WpId;
-use craft\wpimport\generators\fields\WpTitle;
+use CraftCms\Cms\Element\Contracts\ElementInterface;
+use CraftCms\Cms\Element\Queries\Contracts\ElementQueryInterface;
+use CraftCms\Cms\Entry\Data\EntryType;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Field\Entries;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\Cms\FieldLayout\LayoutElements\Entries\EntryTitleField;
+use CraftCms\Cms\Section\Data\Section;
+use CraftCms\Cms\Section\Data\SectionSiteSettings;
+use CraftCms\Cms\Section\Enums\SectionType;
+use CraftCms\Cms\Shared\Enums\Color;
+use CraftCms\Cms\Site\Data\Site;
+use CraftCms\Cms\Support\Facades\EntryTypes;
+use CraftCms\Cms\Support\Facades\Fields;
+use CraftCms\Cms\Support\Facades\Sections;
+use CraftCms\Cms\Support\Facades\Sites;
+use CraftCms\Cms\Support\Str;
+use CraftCms\WpImport\Console\ImportCommand;
+use CraftCms\WpImport\Generators\Fields\Description;
+use CraftCms\WpImport\Generators\Fields\WpId;
+use CraftCms\WpImport\Generators\Fields\WpTitle;
+use RuntimeException;
 use Throwable;
-use yii\console\Exception;
 
 /**
+ * Imports a WordPress taxonomy’s terms as entries.
+ *
+ * Craft 6 has no categories, so hierarchical taxonomies get a Structure section and
+ * flat ones get a Channel section. Posts relate to them with an Entries field.
+ *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
 class Taxonomy extends BaseConfigurableImporter
 {
-    private CategoryGroup $categoryGroup;
-    private Categories $field;
+    private EntryType $entryType;
 
-    public function __construct(private array $data, Command $command, array $config = [])
+    private Section $section;
+
+    private Entries $field;
+
+    public function __construct(private array $data, ImportCommand $command)
     {
-        parent::__construct($command, $config);
+        parent::__construct($command);
     }
 
     public function slug(): string
@@ -60,27 +78,33 @@ class Taxonomy extends BaseConfigurableImporter
 
     public function elementType(): string
     {
-        return Category::class;
+        return Entry::class;
+    }
+
+    public function existingElementQuery(): ElementQueryInterface
+    {
+        return Entry::find()->sectionId($this->section()->id);
     }
 
     public function populate(ElementInterface $element, array $data): void
     {
-        /** @var Category $element */
-        $element->groupId = $this->categoryGroup()->id;
+        /** @var Entry $element */
+        $element->sectionId = $this->section()->id;
+        $element->setTypeId($this->entryType()->id);
 
-        if (!$this->categoryGroup()->maxLevels && $data['parent']) {
+        if ($this->hierarchical() && ! empty($data['parent'])) {
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
-        $element->title = StringHelper::safeTruncate($data['name'], 255);
+        $element->title = Str::limit($data['name'], 255, '', true);
         $element->setFieldValue(WpTitle::get()->handle, $data['name']);
         $element->slug = $data['slug'];
 
         $fieldValues = [
-            Description::get()->handle => $data['description'],
+            Description::get()->handle => $data['description'] ?? null,
         ];
 
-        if (!empty($data['acf'])) {
+        if (! empty($data['acf'])) {
             $fieldValues = array_merge($fieldValues, $this->command->prepareAcfFieldValues(
                 $this->command->fieldsForEntity('taxonomy', $this->slug()),
                 $data['acf'],
@@ -95,28 +119,28 @@ class Taxonomy extends BaseConfigurableImporter
         }
     }
 
-    public function categoryGroup(): CategoryGroup
+    public function entryType(): EntryType
     {
-        if (isset($this->categoryGroup)) {
-            return $this->categoryGroup;
+        if (isset($this->entryType)) {
+            return $this->entryType;
         }
 
-        $groupHandle = StringHelper::toHandle($this->label());
-        $group = Craft::$app->categories->getGroupByHandle($groupHandle);
-        $newGroup = !$group;
+        $name = $this->data['labels']['singular_name'] ?? Str::singular($this->label());
+        $handle = Str::toHandle($name);
+        $entryType = EntryTypes::getEntryTypeByHandle($handle);
+        $newEntryType = ! $entryType;
 
-        if ($newGroup) {
-            $group = new CategoryGroup();
-            $group->name = $this->label();
-            $group->handle = $groupHandle;
-            if (!$this->hierarchical()) {
-                $group->maxLevels = 1;
-            }
+        if ($newEntryType) {
+            $entryType = new EntryType;
+            $entryType->name = $name;
+            $entryType->handle = $handle;
+            $entryType->icon = $this->hierarchical() ? 'folder' : 'tag';
+            $entryType->color = Color::Amber;
         }
 
-        $fieldLayout = $group->getFieldLayout();
+        $fieldLayout = $entryType->getFieldLayout();
         $this->command->addElementsToLayout($fieldLayout, 'Content', [
-            new TitleField(),
+            new EntryTitleField,
             new CustomField(Description::get()),
         ], true, true);
         $this->command->addAcfFieldsToLayout('taxonomy', $this->slug(), $fieldLayout);
@@ -125,42 +149,72 @@ class Taxonomy extends BaseConfigurableImporter
             new CustomField(WpTitle::get()),
         ]);
 
-        $group->setSiteSettings(array_map(fn(Site $site) => new CategoryGroup_SiteSettings([
-            'siteId' => $site->id,
-        ]), Craft::$app->sites->getAllSites(true)));
-
-        $message = sprintf('%s the `%s` category group', $newGroup ? 'Creating' : 'Updating', $group->name);
-        $this->command->do($message, function() use ($group) {
-            if (!Craft::$app->categories->saveGroup($group)) {
-                throw new Exception(implode(', ', $group->getFirstErrors()));
+        $message = sprintf('%s the `%s` entry type', $newEntryType ? 'Creating' : 'Updating', $entryType->name);
+        $this->command->do($message, function () use ($entryType) {
+            if (! EntryTypes::saveEntryType($entryType)) {
+                throw new RuntimeException(implode(', ', $entryType->getFirstErrors()));
             }
         });
 
-        return $this->categoryGroup = $group;
+        return $this->entryType = $entryType;
     }
 
-    public function field(): Categories
+    public function section(): Section
+    {
+        if (isset($this->section)) {
+            return $this->section;
+        }
+
+        $handle = Str::toHandle($this->label());
+        $section = Sections::getSectionByHandle($handle);
+        if ($section) {
+            return $this->section = $section;
+        }
+
+        $section = new Section;
+        $section->name = $this->label();
+        $section->handle = $handle;
+        $section->type = $this->hierarchical() ? SectionType::Structure : SectionType::Channel;
+        $section->enableVersioning = false;
+        $section->setEntryTypes([$this->entryType()]);
+        $section->setSiteSettings(array_map(fn (Site $site) => new SectionSiteSettings([
+            'siteId' => $site->id,
+        ]), Sites::getAllSites(true)->all()));
+
+        $this->command->do("Creating `$section->name` section", function () use ($section) {
+            if (! Sections::saveSection($section)) {
+                throw new RuntimeException(implode(', ', $section->getFirstErrors()));
+            }
+        });
+
+        return $this->section = $section;
+    }
+
+    public function field(): Entries
     {
         if (isset($this->field)) {
             return $this->field;
         }
 
-        $fieldHandle = StringHelper::toHandle($this->label());
-        /** @var Categories|null $field */
-        $field = Craft::$app->fields->getFieldByHandle($fieldHandle);
+        $handle = Str::toHandle($this->label());
+        $field = Fields::getFieldByHandle($handle);
 
-        if ($field) {
+        if ($field instanceof Entries) {
             return $this->field = $field;
         }
 
-        $field = new Categories();
-        $field->name = $this->label();
-        $field->handle = $fieldHandle;
-        $field->source = sprintf('group:%s', $this->categoryGroup()->uid);
+        if ($field) {
+            $handle .= '_'.Str::random(5);
+        }
 
-        $this->command->do("Creating `$field->name` Categories field", function() use ($field) {
-            if (!Craft::$app->fields->saveField($field)) {
-                throw new Exception(implode(', ', $field->getFirstErrors()));
+        $field = new Entries;
+        $field->name = $this->label();
+        $field->handle = $handle;
+        $field->sources = [sprintf('section:%s', $this->section()->uid)];
+
+        $this->command->do("Creating `$field->name` Entries field", function () use ($field) {
+            if (! Fields::saveField($field)) {
+                throw new RuntimeException(implode(', ', $field->getFirstErrors()));
             }
         });
 

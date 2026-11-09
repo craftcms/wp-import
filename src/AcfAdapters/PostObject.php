@@ -1,17 +1,18 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Entries;
-use craft\wpimport\BaseAcfAdapter;
-use craft\wpimport\importers\PostType;
-use yii\console\Exception;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Entries;
+use CraftCms\WpImport\Importers\PostType;
+use RuntimeException;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -25,15 +26,17 @@ class PostObject extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Entries();
-        $field->sources = array_map(function(string $type) use ($data) {
+        $field = new Entries;
+        $field->sources = array_map(function (string $type) use ($data) {
             $importer = $this->command->importers[$type] ?? null;
-            if (!$importer instanceof PostType) {
-                throw new Exception("Unsupported post type in the {$data['label']} field: $type");
+            if (! $importer instanceof PostType) {
+                throw new RuntimeException("Unsupported post type in the {$data['label']} field: $type");
             }
+
             return sprintf('section:%s', $importer->section()->uid);
-        }, (array)$data['post_type']);
+        }, (array) $data['post_type']);
         $field->maxRelations = 1;
+
         return $field;
     }
 

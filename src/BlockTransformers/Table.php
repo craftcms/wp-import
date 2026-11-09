@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -26,9 +27,10 @@ class Table extends BaseBlockTransformer
     {
         // render a new <figure> with `class="table"`
         $node = (new Crawler($data['innerHTML']))->filter('table');
-        if (!$node->count()) {
+        if (! $node->count()) {
             return '';
         }
+
         return Html::tag('figure', $node->outerHtml(), ['class' => 'table']);
     }
 }

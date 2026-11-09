@@ -1,16 +1,17 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\generators\entrytypes\Details as DetailsEntryType;
-use craft\wpimport\generators\fields\Summary;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Generators\EntryTypes\Details as DetailsEntryType;
+use CraftCms\WpImport\Generators\Fields\Summary;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -24,7 +25,7 @@ class Details extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function (Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(DetailsEntryType::get()->id);
             $nestedEntry->setFieldValue(Summary::get()->handle, $data['attrs']['summary']);
 

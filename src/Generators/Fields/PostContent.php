@@ -1,15 +1,9 @@
 <?php
-/**
- * @link https://craftcms.com/
- * @copyright Copyright (c) Pixel & Tonic, Inc.
- * @license MIT
- */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\ckeditor\Field;
-use craft\wpimport\generators\ckeconfigs\PostContent as PostContentConfig;
+use CraftCms\Ckeditor\Field;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,12 +17,19 @@ class PostContent extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Field();
+        $field = new Field;
         $field->name = 'Post Content';
         $field->handle = 'postContent';
-        $field->ckeConfig = PostContentConfig::get()->uid;
-        $field->purifyHtml = false; // todo: allow video embeds in purifier config
+        $field->toolbar = [
+            'heading', '|',
+            'bold', 'italic', 'link', '|',
+            'blockQuote', 'bulletedList', 'numberedList', 'codeBlock', '|',
+            'insertTable', 'mediaEmbed', 'htmlEmbed', 'horizontalLine', 'pageBreak', '|',
+            'createEntry', 'sourceEditing',
+        ];
+        $field->sanitizeHtml = false; // todo: allow video embeds in the sanitizer config
         $field->searchable = true;
+
         return $field;
     }
 }

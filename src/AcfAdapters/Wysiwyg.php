@@ -1,19 +1,18 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\ckeditor\CkeConfig;
-use craft\ckeditor\Field;
-use craft\ckeditor\Plugin;
-use craft\helpers\ArrayHelper;
-use craft\helpers\StringHelper;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Ckeditor\Field;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Support\Arr;
+use CraftCms\Cms\Support\Str;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -27,36 +26,21 @@ class Wysiwyg extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Field();
-        $field->ckeConfig = $this->ckeConfig($data['toolbar'])?->uid;
+        $field = new Field;
+        $toolbarName = Arr::first(
+            array_keys($this->command->wpInfo['wysiwyg_toolbars']),
+            fn (string $key) => Str::snake($key) === $data['toolbar'],
+        );
+        if ($toolbarName) {
+            $field->toolbar = $this->toolbar($toolbarName);
+        }
+
         return $field;
     }
 
-    private function ckeConfig(string $name): ?CkeConfig
+    private function toolbar(string $toolbarName): array
     {
-        $configsService = Plugin::getInstance()->getCkeConfigs();
-        /** @var CkeConfig|null $config */
-        $config = ArrayHelper::firstWhere(
-            $configsService->getAll(),
-            fn(CkeConfig $config) => StringHelper::toSnakeCase($config->name) === $name,
-        );
-        if ($config) {
-            return $config;
-        }
-
-        $toolbarName = ArrayHelper::firstWhere(
-            array_keys($this->command->wpInfo['wysiwyg_toolbars']),
-            fn(string $key) => StringHelper::toSnakeCase($key) === $name,
-        );
-
-        if (!$toolbarName) {
-            return null;
-        }
-
-        $config = new CkeConfig();
-        $config->uid = StringHelper::UUID();
-        $config->name = $toolbarName;
-        $config->toolbar = [];
+        $toolbar = [];
 
         foreach ($this->command->wpInfo['wysiwyg_toolbars'][$toolbarName] as $row) {
             $rowButtons = [];
@@ -86,18 +70,14 @@ class Wysiwyg extends BaseAcfAdapter
                 }
             }
 
-            if (!empty($rowButtons)) {
-                if (!empty($config->toolbar)) {
-                    $config->toolbar[] = '|';
+            if (! empty($rowButtons)) {
+                if (! empty($toolbar)) {
+                    $toolbar[] = '|';
                 }
-                array_push($config->toolbar, ...array_values(array_unique($rowButtons)));
+                array_push($toolbar, ...array_values(array_unique($rowButtons)));
             }
         }
 
-        $this->command->do("Creating `$config->name` CKEditor config", function() use ($configsService, $config) {
-            $configsService->save($config);
-        });
-
-        return $config;
+        return $toolbar;
     }
 }

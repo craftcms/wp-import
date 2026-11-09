@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\RadioButtons;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\RadioButtons;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class Radio extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new RadioButtons();
+        $field = new RadioButtons;
         $field->options = [];
         foreach ($data['choices'] as $value => $label) {
             $field->options[] = [
@@ -34,7 +35,8 @@ class Radio extends BaseAcfAdapter
                     : $value === $data['default_value'],
             ];
         }
-        $field->customOptions = (bool)$data['other_choice'];
+        $field->customOptions = (bool) $data['other_choice'];
+
         return $field;
     }
 }

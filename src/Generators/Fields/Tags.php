@@ -1,15 +1,20 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\fields\Tags as TagsField;
-use craft\wpimport\generators\taggroups\Tags as TagGroup;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Entries;
+use CraftCms\WpImport\Console\ImportCommand;
+use CraftCms\WpImport\Importers\Tag;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,10 +28,13 @@ class Tags extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new TagsField();
+        /** @var Tag $importer */
+        $importer = app(ImportCommand::class)->importers[Tag::SLUG];
+        $field = new Entries;
         $field->name = 'Tags';
         $field->handle = 'tags';
-        $field->source = sprintf('taggroup:%s', TagGroup::get()->uid);
+        $field->sources = [sprintf('section:%s', $importer->taxonomy()->section()->uid)];
+
         return $field;
     }
 }

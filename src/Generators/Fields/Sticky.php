@@ -1,14 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\fields\Lightswitch;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Lightswitch;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -22,9 +24,10 @@ class Sticky extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Lightswitch();
+        $field = new Lightswitch;
         $field->name = 'Sticky';
         $field->handle = 'sticky';
+
         return $field;
     }
 }

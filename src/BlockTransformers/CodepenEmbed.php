@@ -1,10 +1,9 @@
 <?php
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\wpimport\BaseBlockTransformer;
-use craft\wpimport\generators\entrytypes\CodepenEmbed as CodepenEmbedEntryType;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\WpImport\Generators\EntryTypes\CodepenEmbed as CodepenEmbedEntryType;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -18,7 +17,7 @@ class CodepenEmbed extends BaseBlockTransformer
 
     public function render(array $data, Entry $entry): string
     {
-        return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
+        return $this->command->createNestedEntry($entry, function (Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(CodepenEmbedEntryType::get()->id);
             $nestedEntry->setFieldValue('penUrl', $data['attrs']['penURL']);
         });

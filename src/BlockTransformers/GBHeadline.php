@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html as HtmlHelper;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html as HtmlHelper;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -25,7 +26,7 @@ class GBHeadline extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         $node = (new Crawler($data['innerHTML']))->filter('h1,h2,h3,h4,h5,h6,p,div');
-        if (!$node->count()) {
+        if (! $node->count()) {
             return '';
         }
 

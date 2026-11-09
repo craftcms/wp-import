@@ -1,14 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\fields\Number;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Number;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -22,12 +24,13 @@ class WpId extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Number();
+        $field = new Number;
         $field->name = 'WordPress ID';
         $field->handle = 'wpId';
         $field->min = 1;
         $field->searchable = true;
         $field->previewFormat = Number::FORMAT_NONE;
+
         return $field;
     }
 }

@@ -1,154 +1,123 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport;
+namespace CraftCms\WpImport\Console;
 
-use Craft;
-use craft\base\Element;
-use craft\base\ElementInterface;
-use craft\base\FieldLayoutElement;
-use craft\console\Controller;
-use craft\elements\Entry;
-use craft\elements\User;
-use craft\enums\CmsEdition;
-use craft\events\RegisterComponentTypesEvent;
-use craft\fieldlayoutelements\BaseField;
-use craft\fieldlayoutelements\CustomField;
-use craft\fieldlayoutelements\Heading;
-use craft\fieldlayoutelements\Markdown;
-use craft\fields\PlainText;
-use craft\helpers\ArrayHelper;
-use craft\helpers\Console;
-use craft\helpers\FileHelper;
-use craft\helpers\Html;
-use craft\helpers\Json;
-use craft\helpers\StringHelper;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
-use craft\validators\ColorValidator;
-use craft\validators\HandleValidator;
-use craft\wpimport\errors\ImportException;
-use craft\wpimport\errors\ReportableExceptionInterface;
-use craft\wpimport\errors\UnknownAcfFieldTypeException;
-use craft\wpimport\errors\UnknownBlockTypeException;
-use craft\wpimport\generators\entrytypes\Media as MediaEntryType;
-use craft\wpimport\generators\fields\Caption;
-use craft\wpimport\generators\fields\Media as MediaField;
-use craft\wpimport\generators\fields\PostContent;
-use craft\wpimport\generators\fields\RichCaption;
-use craft\wpimport\generators\fields\WpId;
-use craft\wpimport\importers\Comment;
-use craft\wpimport\importers\Comment as CommentImporter;
-use craft\wpimport\importers\Media;
-use craft\wpimport\importers\PostType;
-use craft\wpimport\importers\Taxonomy;
-use craft\wpimport\importers\User as UserImporter;
+use CraftCms\Cms\Cms;
+use CraftCms\Cms\Console\CraftCommand;
+use CraftCms\Cms\Console\PromptTask;
+use CraftCms\Cms\Edition;
+use CraftCms\Cms\Element\Contracts\ElementInterface;
+use CraftCms\Cms\Element\Validation\ElementRules;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Field\Field;
+use CraftCms\Cms\FieldLayout\FieldLayout;
+use CraftCms\Cms\FieldLayout\FieldLayoutElement;
+use CraftCms\Cms\FieldLayout\FieldLayoutTab;
+use CraftCms\Cms\FieldLayout\LayoutElements\BaseField;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\Cms\FieldLayout\LayoutElements\Heading;
+use CraftCms\Cms\FieldLayout\LayoutElements\Markdown;
+use CraftCms\Cms\Support\Arr;
+use CraftCms\Cms\Support\Facades\Elements;
+use CraftCms\Cms\Support\Facades\Fields;
+use CraftCms\Cms\Support\Facades\Path;
+use CraftCms\Cms\Support\Facades\Plugins;
+use CraftCms\Cms\Support\Facades\ProjectConfig;
+use CraftCms\Cms\Support\Facades\Users;
+use CraftCms\Cms\Support\File;
+use CraftCms\Cms\Support\Html;
+use CraftCms\Cms\Support\Json;
+use CraftCms\Cms\Support\Str;
+use CraftCms\Cms\User\Elements\User;
 use CraftCms\UrlValidator\GuzzleMiddleware;
 use CraftCms\UrlValidator\UrlValidationException;
 use CraftCms\UrlValidator\UrlValidator as CraftUrlValidator;
+use CraftCms\WpImport\AcfAdapters\BaseAcfAdapter;
+use CraftCms\WpImport\BlockTransformers\BaseBlockTransformer;
+use CraftCms\WpImport\Events\AcfAdapterTypesResolving;
+use CraftCms\WpImport\Events\BlockTransformerTypesResolving;
+use CraftCms\WpImport\Events\ImporterTypesResolving;
+use CraftCms\WpImport\Exceptions\ImportException;
+use CraftCms\WpImport\Exceptions\ReportableExceptionInterface;
+use CraftCms\WpImport\Exceptions\UnknownAcfFieldTypeException;
+use CraftCms\WpImport\Exceptions\UnknownBlockTypeException;
+use CraftCms\WpImport\Generators\EntryTypes\Media as MediaEntryType;
+use CraftCms\WpImport\Generators\Fields\Media as MediaField;
+use CraftCms\WpImport\Generators\Fields\PostContent;
+use CraftCms\WpImport\Generators\Fields\RichCaption;
+use CraftCms\WpImport\Generators\Fields\WpId;
+use CraftCms\WpImport\Importers\BaseConfigurableImporter;
+use CraftCms\WpImport\Importers\BaseImporter;
+use CraftCms\WpImport\Importers\Media;
+use CraftCms\WpImport\Importers\PostType;
+use CraftCms\WpImport\Importers\Taxonomy;
+use CraftCms\WpImport\Importers\User as UserImporter;
 use DOMElement;
 use Generator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
-use Illuminate\Support\Arr;
+use GuzzleHttp\Utils;
+use Illuminate\Console\Attributes\Aliases;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
+use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+use Laravel\Prompts\Support\Logger;
 use Psr\Http\Message\ResponseInterface;
+use ReflectionClass;
+use RuntimeException;
 use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
-use yii\base\InvalidArgumentException;
-use yii\base\Model;
-use yii\console\Exception;
-use yii\console\ExitCode;
-use yii\helpers\Inflector;
-use yii\validators\UrlValidator;
-use yii\validators\Validator;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\error;
+use function Laravel\Prompts\info;
+use function Laravel\Prompts\note;
+use function Laravel\Prompts\outro;
+use function Laravel\Prompts\password;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\table;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\warning;
 
 /**
  * Imports content from WordPress.
  *
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class Command extends Controller
+#[Aliases(['wp-import/import'])]
+#[Description('Imports content from WordPress.')]
+#[Signature('wp-import
+    {--api-url= : The base API URL (e.g. `https://example.com/wp-json/wp/v2/`)}
+    {--username= : An administrator’s username}
+    {--password= : An application password for the user defined by `--username`}
+    {--type=* : The content types to import (`post`, `page`, `media`, `category`, `tag`, `user`, or a custom post type/taxonomy’s slug)}
+    {--item-id=* : The item ID(s) to import}
+    {--page= : The page to import from the API}
+    {--per-page=100 : The number of items to fetch in each page}
+    {--disk= : The filesystem disk the “WordPress Content” volume should use, if it doesn’t exist yet (defaults to `public`)}
+    {--update : Reimport items that have already been imported}
+    {--dry-run : Treat this as a dry run only}
+    {--fail-fast : Abort the import on the first error encountered}
+    {--no-summary : Don’t show an error summary at the end of the import}
+    {--allowed-private-hosts=* : Hostnames that are allowed to resolve to private IP addresses, for WordPress sites or media hosted on an internal network (e.g. `my-wordpress-project.ddev.site`). A leading `*.` wildcard matches any subdomain.}')]
+class ImportCommand extends Command
 {
-    /**
-     * @event RegisterComponentTypesEvent The event that is triggered when registering importers.
-     *
-     * Transformers must extend [[BaseImporter]].
-     * ---
-     * ```php
-     * use craft\events\RegisterComponentTypesEvent;
-     * use craft\wpimport\Command;
-     * use yii\base\Event;
-     *
-     * if (class_exists(Command::class)) {
-     *     Event::on(
-     *         Command::class,
-     *         Command::EVENT_REGISTER_IMPORTERS,
-     *         function(RegisterComponentTypesEvent $event) {
-     *             $event->types[] = MyImporter::class;
-     *         }
-     *     );
-     * }
-     * ```
-     */
-    public const EVENT_REGISTER_IMPORTERS = 'registerImporters';
-
-    /**
-     * @event RegisterComponentTypesEvent The event that is triggered when registering block transformers.
-     *
-     * Transformers must extend [[BaseBlockTransformer]].
-     * ---
-     * ```php
-     * use craft\events\RegisterComponentTypesEvent;
-     * use craft\wpimport\Command;
-     * use yii\base\Event;
-     *
-     * if (class_exists(Command::class)) {
-     *     Event::on(
-     *         Command::class,
-     *         Command::EVENT_REGISTER_BLOCK_TRANSFORMERS,
-     *         function(RegisterComponentTypesEvent $event) {
-     *             $event->types[] = MyBlockTransformer::class;
-     *         }
-     *     );
-     * }
-     * ```
-     */
-    public const EVENT_REGISTER_BLOCK_TRANSFORMERS = 'registerBlockTransformers';
-
-    /**
-     * @event RegisterComponentTypesEvent The event that is triggered when registering ACF field adapters.
-     *
-     * Transformers must extend [[BaseAcfAdapter]].
-     * ---
-     * ```php
-     * use craft\events\RegisterComponentTypesEvent;
-     * use craft\wpimport\Command;
-     * use yii\base\Event;
-     *
-     * if (class_exists(Command::class)) {
-     *     Event::on(
-     *         Command::class,
-     *         Command::EVENT_REGISTER_ACF_ADAPTERS,
-     *         function(RegisterComponentTypesEvent $event) {
-     *             $event->types[] = MyAcfAdapter::class;
-     *         }
-     *     );
-     * }
-     * ```
-     */
-    public const EVENT_REGISTER_ACF_ADAPTERS = 'registerAcfAdapters';
-
-    /**
-     * @inheritdoc
-     */
-    public $defaultAction = 'import';
+    use CraftCommand;
 
     /**
      * @var string|null The base API URL (e.g. `https://example.com/wp-json/wp/v2/`)
@@ -167,7 +136,7 @@ class Command extends Controller
 
     /**
      * @var string[] The content types to import (`post`, `page`, `media`,
-     * `category`, `tag`, `user`, `comment`, or a custom post type/taxonomy’s slug)
+     *               `category`, `tag`, `user`, or a custom post type/taxonomy’s slug)
      */
     public array $type = [];
 
@@ -185,6 +154,11 @@ class Command extends Controller
      * @var int The number of items to fetch in each page
      */
     public int $perPage = 100;
+
+    /**
+     * @var string The filesystem disk the “WordPress Content” volume should use, if it doesn’t exist yet
+     */
+    public string $disk = 'public';
 
     /**
      * @var bool Reimport items that have already been imported
@@ -207,73 +181,80 @@ class Command extends Controller
     public bool $showSummary = true;
 
     /**
-     * @var string[] Hostnames that are allowed to resolve to private IP addresses, for WordPress sites or media
-     * hosted on an internal network (e.g. `my-wordpress-project.ddev.site`). A leading `*.` wildcard matches any subdomain.
+     * @var string[] Hostnames that are allowed to resolve to private IP addresses
      */
     public array $allowedPrivateHosts = [];
 
     /**
-     * @var BaseImporter[]
+     * @var array<string,BaseImporter>
      */
     public array $importers;
+
     /**
-     * @var BaseBlockTransformer[]
+     * @var array<string,BaseBlockTransformer>
      */
     private array $blockTransformers;
+
     /**
-     * @var BaseAcfAdapter[]
+     * @var array<string,BaseAcfAdapter>
      */
     private array $acfAdapters;
 
-    public bool $importComments;
     public Client $client;
+
     public array $wpInfo;
+
     private array $idMap = [];
+
     private int $importTotal = 0;
 
     /**
      * @var array<string,bool>
      */
     public array $unknownBlockTypes = [];
+
     /**
      * @var array<string,bool>
      */
     public array $unknownAcfFieldTypes = [];
+
     /**
      * @var Throwable[]
      */
     public array $errors = [];
 
-    public function options($actionID): array
-    {
-        return array_merge(parent::options($actionID), [
-            'apiUrl',
-            'username',
-            'password',
-            'type',
-            'itemId',
-            'page',
-            'perPage',
-            'update',
-            'dryRun',
-            'failFast',
-            'showSummary',
-            'allowedPrivateHosts',
-        ]);
-    }
+    /**
+     * @var Logger|null The logger for the task that’s currently running
+     */
+    private ?Logger $logger = null;
 
     /**
      * Imports items from WordPress.
-     *
-     * @return int
      */
-    public function actionImport(): int
+    public function handle(): int
     {
-        if (!$this->systemCheck()) {
-            return ExitCode::OK;
+        // Let generators and other components reach the running command
+        app()->instance(self::class, $this);
+
+        $this->apiUrl = $this->option('api-url');
+        $this->username = $this->option('username');
+        $this->password = $this->option('password');
+        $this->type = $this->listOption('type');
+        $this->itemId = array_map('intval', $this->listOption('item-id'));
+        $this->page = $this->option('page') !== null ? (int) $this->option('page') : null;
+        $this->perPage = (int) $this->option('per-page');
+        $this->disk = $this->option('disk') ?? $this->disk;
+        $this->update = (bool) $this->option('update');
+        $this->dryRun = (bool) $this->option('dry-run');
+        $this->failFast = (bool) $this->option('fail-fast');
+        $this->showSummary = ! $this->option('no-summary');
+        $this->allowedPrivateHosts = $this->listOption('allowed-private-hosts');
+
+        if (! $this->systemCheck()) {
+            return self::SUCCESS;
         }
 
-        $this->client = Craft::createGuzzleClient([
+        $this->client = $this->createGuzzleClient([
             RequestOptions::VERIFY => false,
         ]);
 
@@ -281,13 +262,13 @@ class Command extends Controller
             $urlValidator = new CraftUrlValidator(options: [
                 'allowedPrivateHosts' => $this->allowedPrivateHosts,
             ]);
-        } catch (\InvalidArgumentException $e) {
-            throw new Exception("Invalid --allowed-private-hosts value: {$e->getMessage()}");
+        } catch (InvalidArgumentException $e) {
+            throw new RuntimeException("Invalid --allowed-private-hosts value: {$e->getMessage()}");
         }
 
         // validate every request URL (including redirects), and pin its hostname/port to the validated IPs
-        if (!GuzzleMiddleware::attach($this->client, $urlValidator)) {
-            throw new Exception('Request URLs can’t be validated, because the Guzzle client uses a custom handler.');
+        if (! GuzzleMiddleware::attach($this->client, $urlValidator)) {
+            throw new RuntimeException('Request URLs can’t be validated, because the Guzzle client uses a custom handler.');
         }
 
         $this->captureApiInfo();
@@ -296,98 +277,157 @@ class Command extends Controller
         $this->loadBlockTransformers();
         $this->loadAcfAdapters();
 
-        if (!empty($this->type)) {
+        if (! empty($this->type)) {
             $slugs = $this->type;
         } else {
             // Use this specific order so we don't need to do as many one-off item imports
             $slugs = [
                 UserImporter::SLUG,
                 Media::SLUG,
-                CommentImporter::SLUG,
             ];
             // Add in the rest
             foreach ($this->importers as $importer) {
                 $slug = $importer->slug();
-                if (!in_array($slug, $slugs)) {
+                if (! in_array($slug, $slugs)) {
                     $slugs[] = $slug;
                 }
             }
         }
 
-        $slugs = array_filter($slugs, fn(string $slug) => $this->isSupported($slug));
+        $slugs = array_filter($slugs, fn (string $slug) => $this->isSupported($slug));
         $totals = [];
 
-        if ($this->interactive) {
-            $this->do('Fetching info', function() use ($slugs, &$totals) {
+        if ($this->input->isInteractive()) {
+            $this->do('Fetching info', function () use ($slugs, &$totals) {
                 foreach ($slugs as $slug) {
                     $importer = $this->importers[$slug];
                     $label = $importer->label();
                     if ($importer instanceof BaseConfigurableImporter) {
-                        $typeLabel = sprintf('(%s)', $importer->typeLabel());
-                        // Console::table() didn't handle sub-value formatting until 5.5.1
-                        if ($this->isColorEnabled() && version_compare(Craft::$app->getVersion(), '5.5.1', '>=')) {
-                            $typeLabel = Console::ansiFormat($typeLabel, [Console::FG_YELLOW]);
-                        }
-                        $label = sprintf('%s %s', $label, $typeLabel);
+                        $label = sprintf('%s (%s)', $label, $importer->typeLabel());
                     }
 
                     $totals[] = [
                         $label,
-                        [$importer->slug(), 'format' => [Console::FG_CYAN]],
-                        [Craft::$app->formatter->asInteger($this->totalItems($slug)), 'align' => 'right'],
+                        $importer->slug(),
+                        number_format($this->totalItems($slug)),
                     ];
                 }
             });
 
-            $totals = array_values(Arr::sort($totals, fn(array $item) => Console::stripAnsiFormat($item[0])));
+            table(['Content Type', 'Slug', 'Total Items'], array_values(Arr::sort($totals, fn (array $item) => $item[0])));
 
-            $this->stdout("\n");
-            $this->table(['Content Type', 'Slug', 'Total Items'], $totals);
-            $this->stdout("\n");
-            if (!$this->confirm('Continue with the import?', true)) {
-                $this->stdout("Aborting\n\n");
-                return ExitCode::OK;
+            if (! confirm('Continue with the import?', true)) {
+                info('Aborting.');
+
+                return self::SUCCESS;
             }
-            $this->stdout("\n");
         }
 
         if ($this->dryRun) {
-            $transaction = Craft::$app->getDb()->beginTransaction();
+            DB::beginTransaction();
         }
 
         try {
             foreach ($slugs as $slug) {
                 $label = mb_strtolower($this->importers[$slug]->label());
-                $this->do("Importing $label", function() use ($slug) {
-                    Console::indent();
-                    try {
-                        $items = $this->items($slug, [
-                            'include' => implode(',', $this->itemId),
-                        ]);
-                        foreach ($items as $data) {
-                            try {
-                                $this->import($slug, $data);
-                            } catch (Throwable $e) {
-                                if ($this->failFast) {
-                                    throw $e;
-                                }
+                $this->do("Importing $label", function () use ($slug) {
+                    $items = $this->items($slug, [
+                        'include' => implode(',', $this->itemId),
+                    ]);
+                    foreach ($items as $data) {
+                        try {
+                            $this->import($slug, $data);
+                        } catch (Throwable $e) {
+                            if ($this->failFast) {
+                                throw $e;
                             }
                         }
-                    } finally {
-                        Console::outdent();
                     }
                 });
             }
         } finally {
-            if (isset($transaction)) {
-                $transaction->rollBack();
+            if ($this->dryRun) {
+                DB::rollBack();
                 // prevent project config changes from persisting
-                Craft::$app->projectConfig->reset();
+                ProjectConfig::reset();
             }
         }
 
         $this->outputSummary();
-        return ExitCode::OK;
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Runs an action as a task, or logs it within the task that’s already running.
+     */
+    public function do(string $description, callable $action): void
+    {
+        if ($this->logger) {
+            $this->logger->line($description);
+            try {
+                $action();
+            } catch (Throwable $e) {
+                $this->logger->error(sprintf('%s: %s', $description, $e->getMessage()));
+                throw $e;
+            }
+
+            return;
+        }
+
+        PromptTask::run($description, function (Logger $logger) use ($action) {
+            $this->logger = $logger;
+            try {
+                $action();
+            } finally {
+                $this->logger = null;
+            }
+        }, output: $this->output);
+    }
+
+    /**
+     * Outputs a warning, within the running task if there is one.
+     */
+    #[\Override]
+    public function warn($string, $verbosity = null): void
+    {
+        if ($this->logger) {
+            $this->logger->warning($string);
+
+            return;
+        }
+
+        warning($string);
+    }
+
+    /**
+     * Returns an array option’s values, splitting any comma-separated values.
+     *
+     * @return string[]
+     */
+    private function listOption(string $name): array
+    {
+        return Collection::make((array) $this->option($name))
+            ->flatMap(fn (string $value) => explode(',', $value))
+            ->map(fn (string $value) => trim($value))
+            ->filter(fn (string $value) => $value !== '')
+            ->values()
+            ->all();
+    }
+
+    private function createGuzzleClient(array $config): Client
+    {
+        $guzzleConfig = Arr::merge([
+            'headers' => [
+                'User-Agent' => sprintf('Craft/%s %s', Cms::version(), Utils::defaultUserAgent()),
+            ],
+        ], config('craft.guzzle', []), $config);
+
+        if ($proxy = Cms::config()->httpProxy) {
+            $guzzleConfig['proxy'] = $proxy;
+        }
+
+        return new Client($guzzleConfig);
     }
 
     public function renderBlocks(array $blocks, Entry $entry): string
@@ -408,6 +448,7 @@ class Command extends Controller
         if ($firstError && $this->failFast) {
             throw $firstError;
         }
+
         return $html;
     }
 
@@ -418,12 +459,13 @@ class Command extends Controller
             return $this->renderClassicEditorHtml($block['innerHTML'], $entry);
         }
 
-        if (!isset($this->blockTransformers[$block['blockName']])) {
+        if (! isset($this->blockTransformers[$block['blockName']])) {
             throw new UnknownBlockTypeException($block['blockName'], $block);
         }
 
         $html = $this->blockTransformers[$block['blockName']]->render($block, $entry);
-        return trim($html) . "\n";
+
+        return trim($html)."\n";
     }
 
     private function renderClassicEditorHtml(string $html, Entry $entry): string
@@ -432,11 +474,11 @@ class Command extends Controller
         $body = $crawler->filter('body');
 
         // replace <img> tags with nested Media entries
-        $body->filter('img')->each(function(Crawler $img) use ($entry) {
+        $body->filter('img')->each(function (Crawler $img) use ($entry) {
             foreach (Html::explodeClass($img->attr('class')) as $class) {
                 if (preg_match('/^wp-image-(\d+)$/', $class, $match)) {
                     try {
-                        $assetId = $this->import(Media::SLUG, (int)$match[1]);
+                        $assetId = $this->import(Media::SLUG, (int) $match[1]);
                     } catch (Throwable) {
                         break;
                     }
@@ -458,30 +500,29 @@ class Command extends Controller
     /**
      * Creates a nested entry.
      *
-     * @param Entry $entry
      * @return string The `<craft-entry>` tag to be returned by `render()`
      */
     public function createNestedEntry(Entry $entry, callable $populate): string
     {
-        $nestedEntry = new Entry();
+        $nestedEntry = new Entry;
         $nestedEntry->fieldId = PostContent::get()->id;
         $nestedEntry->ownerId = $entry->id;
         $populate($nestedEntry);
         $this->saveNestedEntry($nestedEntry);
+
         return sprintf('<craft-entry data-entry-id="%s">&nbsp;</craft-entry>', $nestedEntry->id);
     }
 
     /**
      * Creates a nested “Media” entry.
      *
-     * @param Entry $entry
-     * @param int|int[] $assetIds
+     * @param  int|int[]  $assetIds
      */
     public function createNestedMediaEntry(Entry $entry, int|array $assetIds, ?string $caption = null): string
     {
-        return $this->createNestedEntry($entry, function(Entry $nestedEntry) use ($assetIds, $caption) {
+        return $this->createNestedEntry($entry, function (Entry $nestedEntry) use ($assetIds, $caption) {
             $nestedEntry->setTypeId(MediaEntryType::get()->id);
-            $nestedEntry->setFieldValue(MediaField::get()->handle, (array)$assetIds);
+            $nestedEntry->setFieldValue(MediaField::get()->handle, (array) $assetIds);
 
             if ($caption) {
                 $nestedEntry->setFieldValue(RichCaption::get()->handle, $caption);
@@ -491,37 +532,17 @@ class Command extends Controller
 
     /**
      * Saves a nested entry.
-     *
-     * @param Entry $entry
      */
     public function saveNestedEntry(Entry $entry): void
     {
-        $entry->setScenario(Element::SCENARIO_ESSENTIALS);
-        if (!Craft::$app->elements->saveElement($entry)) {
-            throw new Exception(sprintf(
+        $entry->ruleset->useScenario(ElementRules::SCENARIO_ESSENTIALS);
+        if (! Elements::saveElement($entry)) {
+            throw new RuntimeException(sprintf(
                 'Could not save nested %s entry: %s',
                 $entry->getType()->name,
                 implode(', ', $entry->getFirstErrors())
             ));
         }
-    }
-
-    /**
-     * @deprecated
-     */
-    public function acfLayoutTabsForEntity(string $type, string $name, FieldLayout $fieldLayout): array
-    {
-        $tabs = [];
-
-        foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
-            $tabs[] = new FieldLayoutTab([
-                'layout' => $fieldLayout,
-                'name' => $groupData['title'],
-                'elements' => $this->acfFieldElements($groupData['fields']),
-            ]);
-        }
-
-        return $tabs;
     }
 
     public function fieldsForEntity(string $type, string $name): array
@@ -530,6 +551,7 @@ class Command extends Controller
         foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
             $acfFields = array_merge($acfFields, $groupData['fields']);
         }
+
         return $acfFields;
     }
 
@@ -549,6 +571,7 @@ class Command extends Controller
                 return true;
             }
         }
+
         return false;
     }
 
@@ -557,9 +580,11 @@ class Command extends Controller
         foreach ($rules as $rule) {
             if ($rule['param'] === $type) {
                 $result = in_array($rule['value'], [$name, 'all']);
-                return $rule['operator'] === '!=' ? !$result : $result;
+
+                return $rule['operator'] === '!=' ? ! $result : $result;
             }
         }
+
         return false;
     }
 
@@ -576,6 +601,7 @@ class Command extends Controller
                 $clonedFieldData['name'] = sprintf('%s_%s', $fieldData['name'], $clonedFieldData['name']);
             }
         }
+
         return $clonedFields;
     }
 
@@ -590,6 +616,7 @@ class Command extends Controller
                 $fields[] = $this->fieldByKey($key);
             }
         }
+
         return $fields;
     }
 
@@ -646,13 +673,13 @@ class Command extends Controller
     }
 
     /**
-     * @param array[] $fields
+     * @param  array[]  $fields
      * @return FieldLayoutElement[]
      */
     public function acfFieldElements(array $fields): array
     {
         return Collection::make($fields)
-            ->map(fn(array $fieldData) => match ($fieldData['type']) {
+            ->map(fn (array $fieldData) => match ($fieldData['type']) {
                 'accordion', 'tab' => [
                     new Heading([
                         'heading' => $fieldData['label'],
@@ -686,51 +713,51 @@ class Command extends Controller
         }
 
         // Give it a unique global handle
-        $handle = sprintf('acf_%s_%s', StringHelper::toHandle($fieldData['name']), $fieldData['ID']);
-        $field = Craft::$app->fields->getFieldByHandle($handle);
+        $handle = sprintf('acf_%s_%s', Str::toHandle($fieldData['name']), $fieldData['ID']);
+        $field = Fields::getFieldByHandle($handle);
 
-        if (!$field) {
+        if (! $field) {
             $adapter = $this->acfAdapter($fieldData);
             $field = $adapter->create($fieldData);
             $field->name = $fieldData['label'] ?: "Untitled ACF Field {$fieldData['ID']}";
             $field->handle = $handle;
             $field->instructions = $fieldData['instructions'];
 
-            $this->do(sprintf('Creating `%s` %s field', $field->name, $field::displayName()), function() use ($field) {
-                if (!Craft::$app->fields->saveField($field)) {
-                    throw new Exception(implode(', ', $field->getFirstErrors()));
+            $this->do(sprintf('Creating `%s` %s field', $field->name, $field::displayName()), function () use ($field) {
+                if (! Fields::saveField($field)) {
+                    throw new RuntimeException(implode(', ', $field->getFirstErrors()));
                 }
             });
         }
 
-        $element = new CustomField($field);
-        $element->handle = $this->normalizeAcfFieldHandle($fieldData['name']);
-        $element->required = $fieldData['required'];
+        // pass the handle via the config, as it’s only applied to the field when the field is set
+        $config = [
+            'handle' => $this->normalizeAcfFieldHandle($fieldData['name']),
+            'required' => (bool) $fieldData['required'],
+        ];
 
         if ($fieldData['wrapper']['width']) {
             // get it to the closest 25% increment
-            $element->width = (int)(round($fieldData['wrapper']['width'] / 25) * 25);
+            $config['width'] = (int) (round($fieldData['wrapper']['width'] / 25) * 25);
         }
 
-        return $element;
+        return new CustomField($field, $config);
     }
 
     private function acfAdapter(array $data): BaseAcfAdapter
     {
-        if (!isset($this->acfAdapters[$data['type']])) {
+        if (! isset($this->acfAdapters[$data['type']])) {
             $this->unknownAcfFieldTypes[$data['type']] = true;
             throw $this->errors[] = new UnknownAcfFieldTypeException($data['type'], $data);
         }
+
         return $this->acfAdapters[$data['type']];
     }
 
     /**
      * Adds field layout elements to a field layout, within a certain tab.
      *
-     * @param FieldLayout $fieldLayout
-     * @param string $tabName
-     * @param array $elements
-     * @param bool $prependTab
+     * @param  FieldLayoutElement[]  $elements
      */
     public function addElementsToLayout(
         FieldLayout $fieldLayout,
@@ -740,8 +767,8 @@ class Command extends Controller
         bool $prependElements = false,
     ): void {
         $tabs = $fieldLayout->getTabs();
-        $tab = Arr::first($tabs, fn(FieldLayoutTab $tab) => $tab->name === $tabName);
-        $newTab = !$tab;
+        $tab = Arr::first($tabs, fn (FieldLayoutTab $tab) => $tab->name === $tabName);
+        $newTab = ! $tab;
 
         if ($newTab) {
             $tab = new FieldLayoutTab([
@@ -751,7 +778,7 @@ class Command extends Controller
             if ($prependTab) {
                 array_unshift($tabs, $tab);
             } else {
-                array_push($tabs, $tab);
+                $tabs[] = $tab;
             }
             $fieldLayout->setTabs($tabs);
         }
@@ -763,23 +790,23 @@ class Command extends Controller
         foreach ($elements as $element) {
             $test = null;
             if ($element instanceof CustomField) {
-                $test = fn($e) => (
+                $test = fn ($e) => (
                     $e instanceof CustomField &&
                     $e->getFieldUid() === $element->getFieldUid() &&
                     $e->getField()->handle === $element->getField()->handle
                 );
             } elseif ($element instanceof BaseField) {
-                $test = fn($e) => $e instanceof BaseField && $e->attribute() === $element->attribute();
-            } elseif (!$newTab) {
+                $test = fn ($e) => $e instanceof BaseField && $e->attribute() === $element->attribute();
+            } elseif (! $newTab) {
                 // only add non-field layout elements if it's a new tab
                 continue;
             }
-            if (!$test || Arr::first($allElements, $test) === null) {
+            if (! $test || Arr::first($allElements, $test) === null) {
                 $missingElements[] = $element;
             }
         }
 
-        if (!empty($missingElements)) {
+        if (! empty($missingElements)) {
             $tabElements = $tab->getElements();
             if ($prependElements) {
                 array_unshift($tabElements, ...$missingElements);
@@ -790,7 +817,7 @@ class Command extends Controller
         }
     }
 
-    public function addAcfFieldsToLayout(string $type, string $name, FieldLayout $fieldLayout)
+    public function addAcfFieldsToLayout(string $type, string $name, FieldLayout $fieldLayout): void
     {
         foreach ($this->fieldGroupsForEntity($type, $name) as $groupData) {
             $this->addElementsToLayout($fieldLayout, $groupData['title'], $this->acfFieldElements($groupData['fields']));
@@ -806,8 +833,8 @@ class Command extends Controller
                 continue;
             }
 
-            $fieldData = ArrayHelper::firstWhere($acfFields, fn(array $fieldData) => $fieldData['name'] === $fieldName);
-            if (!$fieldData) {
+            $fieldData = Arr::first($acfFields, fn (array $fieldData) => $fieldData['name'] === $fieldName);
+            if (! $fieldData) {
                 continue;
             }
 
@@ -836,11 +863,7 @@ class Command extends Controller
 
     private function normalizeAcfFieldHandle(string $handle): string
     {
-        $handle = StringHelper::toHandle($handle);
-        /** @var HandleValidator $validator */
-        $validator = Collection::make((new PlainText())->getValidators())
-            ->filter(fn(Validator $validator) => $validator instanceof HandleValidator)
-            ->first();
+        $handle = Str::toHandle($handle);
 
         if (in_array($handle, [
             'author',
@@ -851,7 +874,7 @@ class Command extends Controller
             'section',
             'sectionId',
             'type',
-            ...$validator->reservedWords,
+            ...Field::RESERVED_HANDLES,
         ])) {
             return "{$handle}_acf";
         }
@@ -863,151 +886,155 @@ class Command extends Controller
     {
         $taxonomies = $postTypes = null;
 
-        $this->do('Loading taxonomies', function() use (&$taxonomies) {
+        $this->do('Loading taxonomies', function () use (&$taxonomies) {
             $taxonomies = Collection::make($this->get("$this->apiUrl/wp/v2/taxonomies", [
                 'context' => 'edit',
             ]))
-                ->filter(fn($data, $key) => (
-                    !in_array($key, ['post_tag', 'nav_menu']) &&
-                    !str_starts_with($key, 'wp_')
+                ->filter(fn ($data, $key) => (
+                    ! in_array($key, ['post_tag', 'nav_menu']) &&
+                    ! str_starts_with($key, 'wp_')
                 ))
                 ->all();
         });
 
-        $this->do('Loading post types', function() use (&$postTypes) {
+        $this->do('Loading post types', function () use (&$postTypes) {
             $postTypes = Collection::make($this->get("$this->apiUrl/wp/v2/types", [
                 'context' => 'edit',
             ]))
-                ->filter(fn($data, $key) => (
-                    !in_array($key, ['attachment', 'nav_menu_item']) &&
-                    !str_starts_with($key, 'wp_') &&
-                    !str_starts_with($key, 'acf-') &&
-                    !str_starts_with($key, 'gblocks_') &&
-                    !str_starts_with($key, 'jp_')
+                ->filter(fn ($data, $key) => (
+                    ! in_array($key, ['attachment', 'nav_menu_item']) &&
+                    ! str_starts_with($key, 'wp_') &&
+                    ! str_starts_with($key, 'acf-') &&
+                    ! str_starts_with($key, 'gblocks_') &&
+                    ! str_starts_with($key, 'jp_')
                 ))
                 ->all();
         });
 
-        $this->importers = ArrayHelper::index([
+        $this->importers = Collection::make([
             ...$this->loadComponents(
-                'importers',
-                self::EVENT_REGISTER_IMPORTERS,
-                fn(string $class) => !is_subclass_of($class, BaseConfigurableImporter::class),
+                'Importers',
+                ImporterTypesResolving::class,
+                fn (string $class) => ! is_subclass_of($class, BaseConfigurableImporter::class),
             ),
-            ...array_map(fn(array $data) => new Taxonomy($data, $this), $taxonomies),
-            ...array_map(fn(array $data) => new PostType($data, $this), $postTypes),
-        ], fn(BaseImporter $importer) => $importer->slug());
+            ...array_map(fn (array $data) => new Taxonomy($data, $this), $taxonomies),
+            ...array_map(fn (array $data) => new PostType($data, $this), $postTypes),
+        ])
+            ->keyBy(fn (BaseImporter $importer) => $importer->slug())
+            ->all();
     }
 
     private function loadBlockTransformers(): void
     {
-        $this->blockTransformers = ArrayHelper::index(
-            $this->loadComponents('blocktransformers', self::EVENT_REGISTER_BLOCK_TRANSFORMERS),
-            fn(BaseBlockTransformer $transformer) => $transformer::blockName(),
-        );
+        $this->blockTransformers = Collection::make($this->loadComponents('BlockTransformers', BlockTransformerTypesResolving::class))
+            ->keyBy(fn (BaseBlockTransformer $transformer) => $transformer::blockName())
+            ->all();
     }
 
     private function loadAcfAdapters(): void
     {
-        $this->acfAdapters = ArrayHelper::index(
-            $this->loadComponents('acfadapters', self::EVENT_REGISTER_ACF_ADAPTERS),
-            fn(BaseAcfAdapter $adapter) => $adapter::type(),
-        );
+        $this->acfAdapters = Collection::make($this->loadComponents('AcfAdapters', AcfAdapterTypesResolving::class))
+            ->keyBy(fn (BaseAcfAdapter $adapter) => $adapter::type())
+            ->all();
     }
 
-    private function loadComponents(string $dir, ?string $eventName = null, ?callable $filter = null): array
+    /**
+     * @param  class-string<ImporterTypesResolving|BlockTransformerTypesResolving|AcfAdapterTypesResolving>  $eventClass
+     */
+    private function loadComponents(string $dir, string $eventClass, ?callable $filter = null): array
     {
-        $types = array_map(
-            fn(string $file) => sprintf('craft\\wpimport\\%s\\%s', $dir, pathinfo($file, PATHINFO_FILENAME)),
-            FileHelper::findFiles(__DIR__ . "/$dir")
-        );
+        $types = Collection::make(File::files(dirname(__DIR__)."/$dir"))
+            ->map(fn (\SplFileInfo $file) => sprintf('CraftCms\\WpImport\\%s\\%s', $dir, $file->getBasename('.php')))
+            ->all();
 
-        // Load any custom components from config/wp-import/
-        $dir = Craft::$app->path->getConfigPath() . "/wp-import/$dir";
-        if (is_dir($dir)) {
-            $files = FileHelper::findFiles($dir);
-            foreach ($files as $file) {
-                $class = sprintf('craft\\wpimport\\%s\\%s', $dir, pathinfo($file, PATHINFO_FILENAME));
-                if (!class_exists($class, false)) {
-                    require $file;
+        // Load any custom components from config/craft/wp-import/
+        $customDir = Path::config(sprintf('wp-import/%s', Str::lower($dir)));
+        if (is_dir($customDir)) {
+            foreach (File::files($customDir) as $file) {
+                $class = $this->classInFile($file->getPathname());
+                if (! $class) {
+                    continue;
+                }
+                // Laravel may have already loaded it along with the other config files
+                if (! class_exists($class)) {
+                    require_once $file->getPathname();
                 }
                 $types[] = $class;
             }
         }
 
-        if ($eventName && $this->hasEventHandlers($eventName)) {
-            $event = new RegisterComponentTypesEvent([
-                'types' => $types,
-            ]);
-            $this->trigger($eventName, $event);
-            $types = $event->types;
-        }
+        $event = new $eventClass(new Collection);
+        $event->types->push(...$types);
+        event($event);
 
         $components = [];
-        foreach ($types as $class) {
-            if (!$filter || $filter($class)) {
+        foreach ($event->types->unique() as $class) {
+            if ((new ReflectionClass($class))->isAbstract()) {
+                continue;
+            }
+            if (! $filter || $filter($class)) {
                 $components[] = new $class($this);
             }
         }
+
         return $components;
+    }
+
+    /**
+     * Returns the fully-qualified name of the class defined in a file.
+     */
+    private function classInFile(string $path): ?string
+    {
+        $code = File::get($path);
+        if (! preg_match('/^\s*(?:(?:abstract|final|readonly)\s+)*class\s+(\w+)/m', $code, $classMatch)) {
+            return null;
+        }
+        $namespace = preg_match('/^\s*namespace\s+([^;\s]+)\s*;/m', $code, $namespaceMatch) ? $namespaceMatch[1] : null;
+
+        return $namespace ? "$namespace\\$classMatch[1]" : $classMatch[1];
     }
 
     private function totalItems(string $slug): int
     {
         $importer = $this->importers[$slug];
         $this->get("$this->apiUrl/{$importer->apiUri()}", $this->importerQueryParams($slug), $response);
-        return (int)$response->getHeaderLine('X-WP-Total');
+
+        return (int) $response->getHeaderLine('X-WP-Total');
     }
 
     private function systemCheck(): bool
     {
-        if (!Craft::$app->getIsInstalled()) {
-            $this->output('Craft isn’t installed yet.', Console::FG_RED);
+        if (! Cms::isInstalled()) {
+            error('Craft isn’t installed yet.');
+
             return false;
         }
 
-        if (!Craft::$app->plugins->isPluginInstalled('ckeditor')) {
-            $this->warning($this->markdownToAnsi(<<<MD
-Before we begin, the CKEditor plugin must be installed.
-Run the following command to install it:
+        if (! Plugins::isPluginInstalled('ckeditor')) {
+            warning(<<<'TEXT'
+Before we begin, the CKEditor plugin must be installed. Run the following commands to install it:
 
     composer require craftcms/ckeditor
-MD) . "\n\n");
+    php artisan craft:plugin:install ckeditor
+TEXT);
+
             return false;
         }
 
-        if (!Craft::$app->plugins->isPluginEnabled('ckeditor')) {
-            $this->note("The CKEditor plugin must be enabled before we can continue.\n\n");
-            if (!$this->confirm('Enable it now?', true)) {
+        if (! Plugins::isPluginEnabled('ckeditor')) {
+            note('The CKEditor plugin must be enabled before we can continue.');
+            if (! confirm('Enable it now?', true)) {
                 return false;
             }
-            Craft::$app->plugins->enablePlugin('ckeditor');
-            $this->stdout("\n");
+            Plugins::enablePlugin('ckeditor');
         }
 
-        if ($this->interactive && (empty($this->type) || in_array(Comment::SLUG, $this->type))) {
-            if (!Craft::$app->plugins->isPluginInstalled('comments')) {
-                $this->note($this->markdownToAnsi(<<<MD
-The Comments plugin (by Verbb) must be installed if you wish to import comments.
-Run the following command to install it:
+        if (! is_array(config("filesystems.disks.$this->disk"))) {
+            error("The `$this->disk` filesystem disk doesn’t exist. Add it to `config/filesystems.php`, or pass a different disk with `--disk`.");
 
-    composer require verbb/comments
-MD) . "\n\n");
-
-                if (!$this->confirm('Continue without comments?', true)) {
-                    $this->stdout("Aborting\n\n");
-                    return false;
-                }
-            } elseif (!Craft::$app->plugins->isPluginEnabled('comments')) {
-                $this->note("The Comments plugin (by Verbb) must be enabled if you wish to import comments.\n\n");
-                if ($this->confirm('Enable it now?', true)) {
-                    Craft::$app->plugins->enablePlugin('comments');
-                }
-                $this->stdout("\n");
-            }
+            return false;
         }
 
-        $this->importComments = Craft::$app->plugins->isPluginEnabled('comments');
         return true;
     }
 
@@ -1016,54 +1043,43 @@ MD) . "\n\n");
         if (isset($this->apiUrl)) {
             $this->apiUrl = $this->normalizeApiUrl($this->apiUrl);
         } else {
-            $this->apiUrl = $this->normalizeApiUrl($this->prompt('WordPress site URL:', [
-                'required' => true,
-                'validator' => function($value, &$error) {
+            $this->apiUrl = $this->normalizeApiUrl(text(
+                label: 'WordPress site URL:',
+                required: true,
+                validate: function (string $value) {
                     $value = $this->normalizeApiUrl($value);
-                    if (!(new UrlValidator())->validate($value, $error)) {
-                        return false;
+                    if (! filter_var($value, FILTER_VALIDATE_URL) || ! preg_match('/^https?:\/\//i', $value)) {
+                        return 'Enter a valid URL.';
                     }
 
                     try {
                         $this->get("$value/craftcms/v1/ping");
                     } catch (Throwable $e) {
                         if ($e instanceof ClientException && $e->getResponse()->getStatusCode() === 404) {
-                            $error = $this->markdownToAnsi('The `wp-import Helper` WordPress plugin doesn’t appear to be installed.');
-                        } else {
-                            $error = $e->getMessage();
+                            return 'The wp-import Helper WordPress plugin doesn’t appear to be installed.';
                         }
-                        return false;
+
+                        return $e->getMessage();
                     }
 
-                    return true;
+                    return null;
                 },
-            ]));
+            ));
         }
 
-        if (!isset($this->username) || !isset($this->password)) {
-            getCredentials:
-            if (!isset($this->username)) {
-                $this->username = $this->prompt('Administrator username:', [
-                    'required' => true,
-                ]);
-            }
-            if (!isset($this->password)) {
-                $this->password = $this->passwordPrompt([
-                    'label' => "Application password for $this->username:",
-                    'confirm' => false,
-                ]);
-            }
-            $this->stdout("\n");
+        while (! isset($this->username) || ! isset($this->password)) {
+            $this->username ??= text(label: 'Administrator username:', required: true);
+            $this->password ??= password(label: "Application password for $this->username:", required: true);
 
             try {
-                $this->do('Verifying credentials', function() {
+                $this->do('Verifying credentials', function () {
                     $this->get("$this->apiUrl/wp/v2/posts", ['context' => 'edit'], $response);
                     if ($response->getStatusCode() !== 200) {
-                        throw new Exception('Invalid credentials.');
+                        throw new RuntimeException('Invalid credentials.');
                     }
                 });
             } catch (Throwable) {
-                goto getCredentials;
+                $this->username = $this->password = null;
             }
         }
 
@@ -1072,23 +1088,23 @@ MD) . "\n\n");
 
     private function normalizeApiUrl(string $url): string
     {
-        $url = StringHelper::removeRight($url, '/');
-        $url = StringHelper::removeRight($url, '/v2');
-        $url = StringHelper::removeRight($url, '/wp');
-        $url = StringHelper::removeRight($url, '/wp-admin');
-        $url = StringHelper::ensureRight($url, '/wp-json');
-        return $url;
+        $url = Str::chopEnd($url, '/');
+        $url = Str::chopEnd($url, '/v2');
+        $url = Str::chopEnd($url, '/wp');
+        $url = Str::chopEnd($url, '/wp-admin');
+
+        return Str::finish($url, '/wp-json');
     }
 
     private function editionCheck(): void
     {
-        if (!$this->interactive) {
+        if (! $this->input->isInteractive()) {
             return;
         }
 
         // We ignore Team's 5 user limit for the import
         // (not worth the effort/friction to map user accounts up front)
-        if (Craft::$app->edition !== CmsEdition::Solo) {
+        if (Edition::get() !== Edition::Solo) {
             return;
         }
 
@@ -1097,30 +1113,29 @@ MD) . "\n\n");
             return;
         }
 
-        $this->warning(sprintf(<<<MD
-Craft Solo is limited to one user account, but your WordPress install has %s users.
-All WordPress posts will be assigned to that one account, unless you upgrade to the
-Team or Pro edition.
-MD, Craft::$app->formatter->asInteger($totalWpUsers)));
+        warning(sprintf(
+            'Craft Solo is limited to one user account, but your WordPress install has %s users. All WordPress posts will be assigned to that one account, unless you upgrade to the Team or Pro edition.',
+            number_format($totalWpUsers),
+        ));
 
-        if (!$this->confirm('Upgrade your Craft edition?')) {
+        if (! confirm('Upgrade your Craft edition?', false)) {
             return;
         }
 
-        $newEdition = CmsEdition::fromHandle($this->select('New edition:', [
-            CmsEdition::Team->handle() => sprintf('Team (%s users)', Craft::$app->users->getMaxUsers(CmsEdition::Team)),
-            CmsEdition::Pro->handle() => 'Pro (unlimited users)',
+        $newEdition = Edition::fromHandle(select('New edition:', [
+            Edition::Team->handle() => sprintf('Team (%s users)', Users::getMaxUsers(Edition::Team)),
+            Edition::Pro->handle() => 'Pro (unlimited users)',
         ]));
 
-        $this->do('Upgrading the Craft edition', function() use ($newEdition) {
-            Craft::$app->setEdition($newEdition);
+        $this->do('Upgrading the Craft edition', function () use ($newEdition) {
+            Edition::set($newEdition);
         });
     }
 
     public function import(string $slug, int|array $data, array $queryParams = []): int
     {
         $importer = $this->importers[$slug] ?? null;
-        if (!$importer) {
+        if (! $importer) {
             throw new InvalidArgumentException("Invalid content type: $slug");
         }
 
@@ -1133,73 +1148,69 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
         // If this is the first time we've imported an item of this type,
         // give the importer a chance to prep the system for it
-        if (!isset($this->idMap[$slug])) {
+        if (! isset($this->idMap[$slug])) {
             $importer->prep();
         }
 
         // Already exists?
-        /** @var string|ElementInterface $elementType */
+        /** @var class-string<ElementInterface> $elementType */
         $elementType = $importer->elementType();
-        $element = $elementType::find()
+        $element = $importer->existingElementQuery()
             ->{WpId::get()->handle}($id)
             ->status(null)
             ->limit(1)
             ->one();
 
-        if ($element && !$this->update) {
+        if ($element && ! $this->update) {
             return $element->id;
         }
 
-        $importerLabel = Inflector::singularize($slug);
+        $importerLabel = Str::singular($slug);
         $name = trim(($data['name'] ?? null) ?: ($data['title']['raw'] ?? null) ?: ($data['slug'] ?? null) ?: '');
         $name = ($name !== '' && $name != $id) ? "`$name` (`$id`)" : "`$id`";
 
         try {
-            $this->do("Importing $importerLabel $name", function() use (
+            $this->do("Importing $importerLabel $name", function () use (
                 $data,
-                $id,
                 $queryParams,
                 $importer,
                 $elementType,
+                $id,
                 &$element,
             ) {
-                Console::indent();
+                if (is_int($data)) {
+                    $data = $this->item($importer->slug(), $data, $queryParams);
+                }
+
+                $element ??= $importer->find($data) ?? new $elementType;
+                $importer->populate($element, $data);
+                $element->setFieldValue(WpId::get()->handle, $id);
+
+                if ($element->ruleset->getScenario() === ElementRules::SCENARIO_DEFAULT) {
+                    $element->ruleset->useScenario(ElementRules::SCENARIO_ESSENTIALS);
+                }
+
+                // We ignore the edition’s user limits for the import
+                if ($element instanceof User && ! Edition::isAtLeast(Edition::Pro)) {
+                    $edition = Edition::get();
+                    Context::addHidden(Edition::class, Edition::Pro);
+                }
+
                 try {
-                    if (is_int($data)) {
-                        $data = $this->item($importer->slug(), $data, $queryParams);
+                    if (! Elements::saveElement($element)) {
+                        throw new RuntimeException(implode(', ', $element->getFirstErrors()));
                     }
 
-                    $element ??= $importer->find($data) ?? new $elementType();
-                    $importer->populate($element, $data);
-                    $element->{WpId::get()->handle} = $id;
-
-                    if ($element->getScenario() === Model::SCENARIO_DEFAULT) {
-                        $element->setScenario(Element::SCENARIO_ESSENTIALS);
-                    }
-
-                    if ($element instanceof User && Craft::$app->edition->value < CmsEdition::Pro->value) {
-                        $edition = Craft::$app->edition;
-                        Craft::$app->edition = CmsEdition::Pro;
-                    }
-
-                    try {
-                        if (!Craft::$app->elements->saveElement($element)) {
-                            throw new Exception(implode(', ', $element->getFirstErrors()));
-                        }
-
-                        $this->importTotal++;
-                    } finally {
-                        if (isset($edition)) {
-                            Craft::$app->edition = $edition;
-                        }
-                    }
+                    $this->importTotal++;
                 } finally {
-                    Console::outdent();
+                    if (isset($edition)) {
+                        Context::addHidden(Edition::class, $edition);
+                    }
                 }
             });
         } catch (Throwable $e) {
             // UnknownBlockTypeException's have already been captured
-            if (!$e instanceof UnknownBlockTypeException && !$e instanceof UnknownAcfFieldTypeException) {
+            if (! $e instanceof UnknownBlockTypeException && ! $e instanceof UnknownAcfFieldTypeException) {
                 $e = new ImportException($slug, $id, $e);
                 $this->errors[] = $e;
             }
@@ -1259,6 +1270,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
     public function item(string $slug, int $id, array $queryParams = []): array
     {
         $importer = $this->importers[$slug];
+
         return $this->get(
             "$this->apiUrl/{$importer->apiUri()}/$id",
             array_merge($this->importerQueryParams($slug), $queryParams),
@@ -1280,11 +1292,11 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                 RequestOptions::QUERY => $queryParams,
             ]);
         } catch (UrlValidationException $e) {
-            throw new Exception("{$e->getMessage()} If this is an internal host, run the command with `--allowed-private-hosts=<hostname>`.");
+            throw new RuntimeException("{$e->getMessage()} If this is an internal host, run the command with `--allowed-private-hosts=<hostname>`.");
         } catch (RequestException $e) {
-            if ($e->getResponse()->getStatusCode() === 400) {
+            if ($e->getResponse()?->getStatusCode() === 400) {
                 try {
-                    $body = $this->decodeBody((string)$e->getResponse()->getBody());
+                    $body = $this->decodeBody((string) $e->getResponse()->getBody());
                 } catch (InvalidArgumentException) {
                     throw $e;
                 }
@@ -1303,7 +1315,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
             throw $e;
         }
 
-        return $this->decodeBody((string)$response->getBody());
+        return $this->decodeBody((string) $response->getBody());
     }
 
     private function decodeBody(string $body): array
@@ -1313,88 +1325,91 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         } catch (InvalidArgumentException $e) {
             // Skip any PHP warnings at the top
             if (
-                !preg_match('/^[\[{]/m', $body, $matches, PREG_OFFSET_CAPTURE) ||
+                ! preg_match('/^[\[{]/m', $body, $matches, PREG_OFFSET_CAPTURE) ||
                 $matches[0][1] === 0
             ) {
                 throw $e;
             }
+
             return Json::decode(substr($body, $matches[0][1]));
         }
     }
 
     public function outputSummary(): void
     {
-        if (!$this->showSummary) {
+        if (! $this->showSummary) {
             return;
         }
 
-        $dryRunLabel = $this->dryRun ? '**[DRY RUN]** ' : '';
+        $dryRunLabel = $this->dryRun ? '[DRY RUN] ' : '';
         $importMessage = sprintf('Imported %s successfully', $this->importTotal === 1 ? '1 item' : "$this->importTotal items");
 
         if (empty($this->errors)) {
-            $this->success($dryRunLabel . $importMessage);
-        } else {
-            $report = '';
-            $hr = sprintf("%s\n", str_repeat('-', 80));
+            outro($dryRunLabel.$importMessage);
 
-            if (!empty($this->unknownBlockTypes)) {
-                $report .= "The following unknown block types were encountered:\n";
-                foreach (array_keys($this->unknownBlockTypes) as $type) {
-                    $report .= " - $type\n";
-                }
-                $report .= "$hr";
-            }
-
-            if (!empty($this->unknownAcfFieldTypes)) {
-                $report .= "The following unknown ACF field types were encountered:\n";
-                foreach (array_keys($this->unknownAcfFieldTypes) as $type) {
-                    $report .= " - $type\n";
-                }
-                $report .= "$hr";
-            }
-
-            foreach ($this->errors as $i => $e) {
-                if ($i !== 0) {
-                    $report .= $hr;
-                }
-
-                $report .= "Error: {$e->getMessage()}\n";
-                if ($e instanceof ReportableExceptionInterface) {
-                    $extra = trim($e->getReport(), "\n");
-                    if ($extra !== '') {
-                        $report .= "$extra\n";
-                    }
-                } else {
-                    if ($e instanceof ImportException) {
-                        $report .= "Content type: $e->slug\n";
-                        $report .= "Item ID: $e->itemId\n";
-                        $e = $e->getPrevious();
-                    }
-                    $report .= sprintf("Location: %s\n", implode(':', array_filter([$e->getFile(), $e->getLine()])));
-                    $report .= sprintf("Trace:\n%s\n", $e->getTraceAsString());
-                }
-            }
-
-            $reportPath = Craft::getAlias('@root/wp-import-errors.txt');
-            FileHelper::writeToFile($reportPath, $report);
-
-            $totalErrors = count($this->errors);
-            $errorMessage = sprintf('%s encountered.', $totalErrors === 1 ? '1 error was' : "$totalErrors errors were");
-            if ($this->importTotal) {
-                $errorMessage = "$importMessage, but $errorMessage";
-            }
-            $errorMessage .= "\nError details have been logged to `$reportPath`.";
-            $this->failure($dryRunLabel . $errorMessage);
+            return;
         }
+
+        $report = '';
+        $hr = sprintf("%s\n", str_repeat('-', 80));
+
+        if (! empty($this->unknownBlockTypes)) {
+            $report .= "The following unknown block types were encountered:\n";
+            foreach (array_keys($this->unknownBlockTypes) as $type) {
+                $report .= " - $type\n";
+            }
+            $report .= "$hr";
+        }
+
+        if (! empty($this->unknownAcfFieldTypes)) {
+            $report .= "The following unknown ACF field types were encountered:\n";
+            foreach (array_keys($this->unknownAcfFieldTypes) as $type) {
+                $report .= " - $type\n";
+            }
+            $report .= "$hr";
+        }
+
+        foreach ($this->errors as $i => $e) {
+            if ($i !== 0) {
+                $report .= $hr;
+            }
+
+            $report .= "Error: {$e->getMessage()}\n";
+            if ($e instanceof ReportableExceptionInterface) {
+                $extra = trim($e->getReport(), "\n");
+                if ($extra !== '') {
+                    $report .= "$extra\n";
+                }
+            } else {
+                if ($e instanceof ImportException) {
+                    $report .= "Content type: $e->slug\n";
+                    $report .= "Item ID: $e->itemId\n";
+                    $e = $e->getPrevious();
+                }
+                $report .= sprintf("Location: %s\n", implode(':', array_filter([$e->getFile(), $e->getLine()])));
+                $report .= sprintf("Trace:\n%s\n", $e->getTraceAsString());
+            }
+        }
+
+        $reportPath = base_path('wp-import-errors.txt');
+        File::writeToFile($reportPath, $report);
+
+        $totalErrors = count($this->errors);
+        $errorMessage = sprintf('%s encountered.', $totalErrors === 1 ? '1 error was' : "$totalErrors errors were");
+        if ($this->importTotal) {
+            $errorMessage = "$importMessage, but $errorMessage";
+        }
+        $errorMessage .= " Error details have been logged to $reportPath.";
+        error($dryRunLabel.$errorMessage);
     }
 
     public function normalizeColor(?string $color): ?string
     {
-        if (!$color) {
+        if (! $color) {
             return null;
         }
 
-        if ((new ColorValidator())->validate($color)) {
+        if (preg_match('/^(?:#[0-9a-f]{6}|transparent)$/', $color)) {
             return $color;
         }
 

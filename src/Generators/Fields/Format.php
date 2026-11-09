@@ -1,14 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\fields;
+namespace CraftCms\WpImport\Generators\Fields;
 
-use craft\base\FieldInterface;
-use craft\fields\Dropdown;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Dropdown;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -22,7 +24,7 @@ class Format extends BaseFieldGenerator
 
     protected static function create(): FieldInterface
     {
-        $field = new Dropdown();
+        $field = new Dropdown;
         $field->name = 'Format';
         $field->handle = 'format';
         $field->options = [
@@ -37,6 +39,7 @@ class Format extends BaseFieldGenerator
             ['label' => 'Status', 'value' => 'status'],
             ['label' => 'Video', 'value' => 'video'],
         ];
+
         return $field;
     }
 }

@@ -1,23 +1,23 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\generators\volumes;
+namespace CraftCms\WpImport\Generators\Volumes;
 
-use Craft;
-use craft\fieldlayoutelements\assets\AltField;
-use craft\fieldlayoutelements\CustomField;
-use craft\models\FieldLayout;
-use craft\models\Volume;
-use craft\wpimport\Command;
-use craft\wpimport\generators\fields\Caption;
-use craft\wpimport\generators\fields\Description;
-use craft\wpimport\generators\fields\WpId;
-use craft\wpimport\generators\fields\WpTitle;
-use craft\wpimport\generators\filesystems\Uploads as UploadsFs;
+use CraftCms\Cms\Asset\Data\Volume;
+use CraftCms\Cms\FieldLayout\FieldLayout;
+use CraftCms\Cms\FieldLayout\LayoutElements\Assets\AltField;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\WpImport\Console\ImportCommand;
+use CraftCms\WpImport\Generators\Fields\Caption;
+use CraftCms\WpImport\Generators\Fields\Description;
+use CraftCms\WpImport\Generators\Fields\WpId;
+use CraftCms\WpImport\Generators\Fields\WpTitle;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -34,15 +34,16 @@ class WpContent extends BaseVolumeGenerator
         $volume->name = 'WordPress Content';
         $volume->handle = 'wpContent';
         $volume->subpath = 'wp-content';
-        $volume->setFsHandle(UploadsFs::get()->handle);
+        $volume->setFsHandle(app(ImportCommand::class)->disk);
+        $volume->hasUrls = true;
     }
 
     protected static function updateFieldLayout(FieldLayout $fieldLayout): void
     {
-        /** @var Command $command */
-        $command = Craft::$app->controller;
+        /** @var ImportCommand $command */
+        $command = app(ImportCommand::class);
         $command->addElementsToLayout($fieldLayout, 'Content', [
-            new AltField(),
+            new AltField,
             new CustomField(Caption::get()),
             new CustomField(Description::get()),
         ], true, true);

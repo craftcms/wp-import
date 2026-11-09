@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html as HtmlHelper;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html as HtmlHelper;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -24,7 +25,8 @@ class Spacer extends BaseBlockTransformer
     public function render(array $data, Entry $entry): string
     {
         // replace with empty paragraphs
-        $paragraphs = (int)round((int)($data['attrs']['height'] ?? 0) / 22);
+        $paragraphs = (int) round((int) ($data['attrs']['height'] ?? 0) / 22);
+
         return str_repeat(HtmlHelper::tag('p', '&nbsp;'), $paragraphs);
     }
 }

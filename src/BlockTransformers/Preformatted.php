@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\blocktransformers;
+namespace CraftCms\WpImport\BlockTransformers;
 
-use craft\elements\Entry;
-use craft\helpers\Html;
-use craft\wpimport\BaseBlockTransformer;
+use CraftCms\Cms\Entry\Elements\Entry;
+use CraftCms\Cms\Support\Html;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -26,11 +27,12 @@ class Preformatted extends BaseBlockTransformer
     {
         // `<pre class="wp-block-preformatted">` → `<pre><code>`
         $node = (new Crawler($data['innerHTML']))->filter('pre');
-        if (!$node->count()) {
+        if (! $node->count()) {
             return '';
         }
-        return Html::beginTag('pre') .
-            Html::tag('code', $node->html(), ['class' => 'language-plaintext']) .
+
+        return Html::beginTag('pre').
+            Html::tag('code', $node->html(), ['class' => 'language-plaintext']).
             Html::endTag('pre');
     }
 }

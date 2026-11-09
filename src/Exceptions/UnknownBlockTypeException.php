@@ -1,19 +1,21 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\errors;
+namespace CraftCms\WpImport\Exceptions;
 
-use craft\helpers\Json;
-use yii\console\Exception;
+use CraftCms\Cms\Support\Json;
+use RuntimeException;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class UnknownBlockTypeException extends Exception implements ReportableExceptionInterface
+class UnknownBlockTypeException extends RuntimeException implements ReportableExceptionInterface
 {
     public function __construct(
         public readonly string $blockType,

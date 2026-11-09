@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Icon as IconField;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Icon as IconField;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,7 +24,7 @@ class IconPicker extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        return new IconField();
+        return new IconField;
     }
 
     public function normalizeValue(mixed $value, array $data): mixed
@@ -31,6 +32,7 @@ class IconPicker extends BaseAcfAdapter
         if ($value['type'] === 'dashicons') {
             return $this->command->normalizeIcon($value['value']);
         }
+
         return null;
     }
 }

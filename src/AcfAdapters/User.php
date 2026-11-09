@@ -1,16 +1,17 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Users;
-use craft\wpimport\BaseAcfAdapter;
-use craft\wpimport\importers\User as UserImporter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Users;
+use CraftCms\WpImport\Importers\User as UserImporter;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -26,17 +27,18 @@ class User extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new Users();
-        if (!$data['multiple']) {
+        $field = new Users;
+        if (! $data['multiple']) {
             $field->maxRelations = 1;
         }
+
         return $field;
     }
 
     public function normalizeValue(mixed $value, array $data): mixed
     {
-        return Collection::make((array)$value)
-            ->map(function(int $id) {
+        return Collection::make((array) $value)
+            ->map(function (int $id) {
                 try {
                     return $this->command->import(UserImporter::SLUG, $id, [
                         'roles' => UserImporter::ALL_ROLES,

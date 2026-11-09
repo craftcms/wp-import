@@ -1,18 +1,20 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\errors;
+namespace CraftCms\WpImport\Exceptions;
 
-use yii\console\Exception;
+use RuntimeException;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
  */
-class InvalidColor extends Exception implements ReportableExceptionInterface
+class InvalidColor extends RuntimeException implements ReportableExceptionInterface
 {
     public function __construct(
         public readonly string $color,

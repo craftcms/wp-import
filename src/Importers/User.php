@@ -1,21 +1,23 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\importers;
+namespace CraftCms\WpImport\Importers;
 
-use Craft;
-use craft\base\ElementInterface;
-use craft\elements\User as UserElement;
-use craft\enums\CmsEdition;
-use craft\fieldlayoutelements\CustomField;
-use craft\helpers\StringHelper;
-use craft\wpimport\BaseImporter;
-use craft\wpimport\generators\fields\WpId;
-use craft\wpimport\generators\fields\WpTitle;
+use CraftCms\Cms\Edition;
+use CraftCms\Cms\Element\Contracts\ElementInterface;
+use CraftCms\Cms\FieldLayout\LayoutElements\CustomField;
+use CraftCms\Cms\Support\Facades\Fields;
+use CraftCms\Cms\Support\Facades\Users;
+use CraftCms\Cms\Support\Str;
+use CraftCms\Cms\User\Elements\User as UserElement;
+use CraftCms\WpImport\Generators\Fields\WpId;
+use CraftCms\WpImport\Generators\Fields\WpTitle;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,6 +25,7 @@ use craft\wpimport\generators\fields\WpTitle;
 class User extends BaseImporter
 {
     public const SLUG = 'user';
+
     public const ALL_ROLES = 'administrator,editor,author,contributor,viewer,subscriber';
 
     public function slug(): string
@@ -54,22 +57,24 @@ class User extends BaseImporter
 
     public function supported(?string &$reason): bool
     {
-        if (Craft::$app->edition->value < CmsEdition::Pro->value) {
+        if (! Edition::isAtLeast(Edition::Pro)) {
             $reason = 'Craft Pro is required.';
+
             return false;
         }
+
         return true;
     }
 
     public function prep(): void
     {
-        $this->command->do('Updating the user field layout', function() {
-            $fieldLayout = Craft::$app->fields->getLayoutByType(UserElement::class);
+        $this->command->do('Updating the user field layout', function () {
+            $fieldLayout = Fields::getLayoutByType(UserElement::class);
             $this->command->addElementsToLayout($fieldLayout, 'Meta', [
                 new CustomField(WpId::get()),
                 new CustomField(WpTitle::get()),
             ]);
-            Craft::$app->users->saveLayout($fieldLayout);
+            Users::saveLayout($fieldLayout);
         });
     }
 
@@ -81,7 +86,7 @@ class User extends BaseImporter
     public function populate(ElementInterface $element, array $data): void
     {
         if (UserElement::find()->username($data['username'])->exists()) {
-            $data['username'] .= '_' . StringHelper::randomString(5);
+            $data['username'] .= '_'.Str::random(5);
         }
 
         /** @var UserElement $element */

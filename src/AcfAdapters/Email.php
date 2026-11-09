@@ -1,15 +1,16 @@
 <?php
+
 /**
  * @link https://craftcms.com/
+ *
  * @copyright Copyright (c) Pixel & Tonic, Inc.
  * @license MIT
  */
 
-namespace craft\wpimport\acfadapters;
+namespace CraftCms\WpImport\AcfAdapters;
 
-use craft\base\FieldInterface;
-use craft\fields\Email as EmailField;
-use craft\wpimport\BaseAcfAdapter;
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Email as EmailField;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -23,8 +24,9 @@ class Email extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new EmailField();
+        $field = new EmailField;
         $field->placeholder = $data['placeholder'];
+
         return $field;
     }
 }
