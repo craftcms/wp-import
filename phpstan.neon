@@ -5,3 +5,6 @@ parameters:
     level: 5
     paths:
         - src
+    # Each worker boots Craft, which can race to create its runtime directories
+    parallel:
+        maximumNumberOfProcesses: 1
