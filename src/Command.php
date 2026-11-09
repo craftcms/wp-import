@@ -10,6 +10,7 @@ namespace craft\wpimport;
 use Craft;
 use craft\base\Element;
 use craft\base\ElementInterface;
+use craft\base\Field;
 use craft\base\FieldLayoutElement;
 use craft\console\Controller;
 use craft\elements\Entry;
@@ -20,7 +21,6 @@ use craft\fieldlayoutelements\BaseField;
 use craft\fieldlayoutelements\CustomField;
 use craft\fieldlayoutelements\Heading;
 use craft\fieldlayoutelements\Markdown;
-use craft\fields\PlainText;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Console;
 use craft\helpers\FileHelper;
@@ -30,7 +30,6 @@ use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\validators\ColorValidator;
-use craft\validators\HandleValidator;
 use craft\wpimport\errors\ImportException;
 use craft\wpimport\errors\ReportableExceptionInterface;
 use craft\wpimport\errors\UnknownAcfFieldTypeException;
@@ -47,6 +46,7 @@ use craft\wpimport\importers\Media;
 use craft\wpimport\importers\PostType;
 use craft\wpimport\importers\Taxonomy;
 use craft\wpimport\importers\User as UserImporter;
+use CraftCms\Cms\Edition;
 use CraftCms\UrlValidator\GuzzleMiddleware;
 use CraftCms\UrlValidator\UrlValidationException;
 use CraftCms\UrlValidator\UrlValidator as CraftUrlValidator;
@@ -58,6 +58,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Context;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
@@ -67,7 +68,6 @@ use yii\console\Exception;
 use yii\console\ExitCode;
 use yii\helpers\Inflector;
 use yii\validators\UrlValidator;
-use yii\validators\Validator;
 
 /**
  * Imports content from WordPress.
@@ -837,11 +837,6 @@ class Command extends Controller
     private function normalizeAcfFieldHandle(string $handle): string
     {
         $handle = StringHelper::toHandle($handle);
-        /** @var HandleValidator $validator */
-        $validator = Collection::make((new PlainText())->getValidators())
-            ->filter(fn(Validator $validator) => $validator instanceof HandleValidator)
-            ->first();
-
         if (in_array($handle, [
             'author',
             'authorId',
@@ -851,7 +846,7 @@ class Command extends Controller
             'section',
             'sectionId',
             'type',
-            ...$validator->reservedWords,
+            ...Field::RESERVED_HANDLES,
         ])) {
             return "{$handle}_acf";
         }
@@ -983,6 +978,24 @@ MD) . "\n\n");
             }
             Craft::$app->plugins->enablePlugin('ckeditor');
             $this->stdout("\n");
+        }
+
+        // Craft 6 only supports categories and tags once they’ve been enabled
+        $missingCommands = [];
+        foreach (['categories', 'tags'] as $table) {
+            if (!Craft::$app->getDb()->tableExists("{{%$table}}")) {
+                $missingCommands[] = "    php craft craft:add-$table-support";
+            }
+        }
+        if (!empty($missingCommands)) {
+            $commands = implode("\n", $missingCommands);
+            $this->warning($this->markdownToAnsi(<<<MD
+Before we begin, categories and tags must be enabled, as WordPress categories and tags are imported as Craft categories and tags.
+Run the following commands to enable them:
+
+$commands
+MD) . "\n\n");
+            return false;
         }
 
         if ($this->interactive && (empty($this->type) || in_array(Comment::SLUG, $this->type))) {
@@ -1117,6 +1130,19 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
         });
     }
 
+    /**
+     * Temporarily changes the edition for the rest of the request, without saving it.
+     */
+    private function overrideEdition(CmsEdition $edition): void
+    {
+        if (class_exists(Edition::class)) {
+            // Craft 6 reads the edition from the request context
+            Context::addHidden(Edition::class, $edition);
+        } else {
+            Craft::$app->edition = $edition;
+        }
+    }
+
     public function import(string $slug, int|array $data, array $queryParams = []): int
     {
         $importer = $this->importers[$slug] ?? null;
@@ -1179,7 +1205,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
 
                     if ($element instanceof User && Craft::$app->edition->value < CmsEdition::Pro->value) {
                         $edition = Craft::$app->edition;
-                        Craft::$app->edition = CmsEdition::Pro;
+                        $this->overrideEdition(CmsEdition::Pro);
                     }
 
                     try {
@@ -1190,7 +1216,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
                         $this->importTotal++;
                     } finally {
                         if (isset($edition)) {
-                            Craft::$app->edition = $edition;
+                            $this->overrideEdition($edition);
                         }
                     }
                 } finally {

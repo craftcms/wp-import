@@ -9,11 +9,11 @@ namespace craft\wpimport\acfadapters;
 
 use craft\base\FieldInterface;
 use craft\ckeditor\CkeConfig;
-use craft\ckeditor\Field;
 use craft\ckeditor\Plugin;
 use craft\helpers\ArrayHelper;
 use craft\helpers\StringHelper;
 use craft\wpimport\BaseAcfAdapter;
+use craft\wpimport\generators\ckeconfigs\BaseCkeConfigGenerator;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -25,11 +25,29 @@ class Wysiwyg extends BaseAcfAdapter
         return 'wysiwyg';
     }
 
-    public function create(array $data): FieldInterface
+    /**
+     * @return FieldInterface
+     */
+    public function create(array $data)
     {
-        $field = new Field();
-        $field->ckeConfig = $this->ckeConfig($data['toolbar'])?->uid;
+        $field = BaseCkeConfigGenerator::newField();
+        if (BaseCkeConfigGenerator::usesConfigs()) {
+            $field->ckeConfig = $this->ckeConfig($data['toolbar'])?->uid;
+        } else {
+            $toolbarName = $this->toolbarName($data['toolbar']);
+            if ($toolbarName) {
+                $field->toolbar = $this->toolbar($toolbarName);
+            }
+        }
         return $field;
+    }
+
+    private function toolbarName(string $name): ?string
+    {
+        return ArrayHelper::firstWhere(
+            array_keys($this->command->wpInfo['wysiwyg_toolbars']),
+            fn(string $key) => StringHelper::toSnakeCase($key) === $name,
+        );
     }
 
     private function ckeConfig(string $name): ?CkeConfig
@@ -44,10 +62,7 @@ class Wysiwyg extends BaseAcfAdapter
             return $config;
         }
 
-        $toolbarName = ArrayHelper::firstWhere(
-            array_keys($this->command->wpInfo['wysiwyg_toolbars']),
-            fn(string $key) => StringHelper::toSnakeCase($key) === $name,
-        );
+        $toolbarName = $this->toolbarName($name);
 
         if (!$toolbarName) {
             return null;
@@ -56,7 +71,18 @@ class Wysiwyg extends BaseAcfAdapter
         $config = new CkeConfig();
         $config->uid = StringHelper::UUID();
         $config->name = $toolbarName;
-        $config->toolbar = [];
+        $config->toolbar = $this->toolbar($toolbarName);
+
+        $this->command->do("Creating `$config->name` CKEditor config", function() use ($configsService, $config) {
+            $configsService->save($config);
+        });
+
+        return $config;
+    }
+
+    private function toolbar(string $toolbarName): array
+    {
+        $toolbar = [];
 
         foreach ($this->command->wpInfo['wysiwyg_toolbars'][$toolbarName] as $row) {
             $rowButtons = [];
@@ -87,17 +113,13 @@ class Wysiwyg extends BaseAcfAdapter
             }
 
             if (!empty($rowButtons)) {
-                if (!empty($config->toolbar)) {
-                    $config->toolbar[] = '|';
+                if (!empty($toolbar)) {
+                    $toolbar[] = '|';
                 }
-                array_push($config->toolbar, ...array_values(array_unique($rowButtons)));
+                array_push($toolbar, ...array_values(array_unique($rowButtons)));
             }
         }
 
-        $this->command->do("Creating `$config->name` CKEditor config", function() use ($configsService, $config) {
-            $configsService->save($config);
-        });
-
-        return $config;
+        return $toolbar;
     }
 }
