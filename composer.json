@@ -25,10 +25,10 @@
   "prefer-stable": true,
   "require": {
     "php": "^8.2",
-    "craftcms/cms": "^5.5.0-alpha",
+    "craftcms/cms": "^5.5.0-alpha|^6.0.0-beta.1",
     "craftcms/url-validator": "^1.2",
-    "symfony/css-selector": "^6.0|^7.0",
-    "symfony/dom-crawler": "^6.0|^7.0"
+    "symfony/css-selector": "^6.0|^7.0|^8.0",
+    "symfony/dom-crawler": "^6.0|^7.0|^8.0"
   },
   "require-dev": {
     "craftcms/ckeditor": "^4.2",
@@ -36,6 +36,9 @@
     "craftcms/phpstan": "dev-main",
     "pestphp/pest": "^1.22",
     "verbb/comments": "^3.0"
+  },
+  "suggest": {
+    "craftcms/yii2-adapter": "Required to use wp-import with Craft CMS 6."
   },
   "repositories": [
     {"type": "path", "url":  "../cms"}

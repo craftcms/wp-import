@@ -33,8 +33,7 @@ class Image extends BaseAcfAdapter
         $field->sources = [$sourceKey];
         $field->viewMode = 'large';
         $field->defaultUploadLocationSource = $sourceKey;
-        $field->restrictFiles = true;
-        $field->allowedKinds = ['image'];
+        $this->restrictFileKinds($field, ['image']);
         return $field;
     }
 

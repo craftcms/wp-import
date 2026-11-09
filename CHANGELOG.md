@@ -1,5 +1,10 @@
 # Release Notes for Craft Generator
 
+## Unreleased
+
+- Added Craft 6 compatibility, when the `craftcms/yii2-adapter` package is installed. Fields are created for CKEditor 6.
+- Added support for Symfony 8.
+
 ## 2.2.0 - 2026-10-11
 
 > [!WARNING]

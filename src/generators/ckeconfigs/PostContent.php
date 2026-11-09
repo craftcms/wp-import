@@ -19,15 +19,20 @@ class PostContent extends BaseCkeConfigGenerator
         return '7261a233-a194-4374-8a55-91770cef7528';
     }
 
-    protected static function populate(CkeConfig $config): void
+    protected static function toolbar(): array
     {
-        $config->name = 'Post Content';
-        $config->toolbar = [
+        return [
             'heading', '|',
             'bold', 'italic', 'link', '|',
             'blockQuote', 'bulletedList', 'numberedList', 'codeBlock', '|',
             'insertTable', 'mediaEmbed', 'htmlEmbed', 'horizontalLine', 'pageBreak', '|',
             'createEntry', 'sourceEditing',
         ];
+    }
+
+    protected static function populate(CkeConfig $config): void
+    {
+        $config->name = 'Post Content';
+        $config->toolbar = static::toolbar();
     }
 }

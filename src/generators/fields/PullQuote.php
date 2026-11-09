@@ -8,7 +8,6 @@
 namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
-use craft\ckeditor\Field;
 use craft\wpimport\generators\ckeconfigs\PullQuote as PullQuoteConfig;
 
 /**
@@ -21,12 +20,14 @@ class PullQuote extends BaseFieldGenerator
         return 'cdbd7117-1123-4e4b-b255-dd1c92d3c864';
     }
 
-    protected static function create(): FieldInterface
+    /**
+     * @return FieldInterface
+     */
+    protected static function create()
     {
-        $field = new Field();
+        $field = PullQuoteConfig::createField();
         $field->name = 'Pull Quote';
         $field->handle = 'pullQuote';
-        $field->ckeConfig = PullQuoteConfig::get()->uid;
         $field->searchable = true;
         return $field;
     }

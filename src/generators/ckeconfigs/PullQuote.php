@@ -19,12 +19,17 @@ class PullQuote extends BaseCkeConfigGenerator
         return 'ab558ffb-1a0a-4153-bd95-0106e9e7c5f3';
     }
 
-    protected static function populate(CkeConfig $config): void
+    protected static function toolbar(): array
     {
-        $config->name = 'Pull Quote';
-        $config->toolbar = [
+        return [
             'heading', 'bold', 'italic', 'link', '|',
             'code', 'strikethrough', 'subscript', 'superscript',
         ];
+    }
+
+    protected static function populate(CkeConfig $config): void
+    {
+        $config->name = 'Pull Quote';
+        $config->toolbar = static::toolbar();
     }
 }

@@ -36,6 +36,7 @@ use craft\wpimport\generators\fields\Tags;
 use craft\wpimport\generators\fields\Template;
 use craft\wpimport\generators\fields\WpId;
 use craft\wpimport\generators\fields\WpTitle;
+use CraftCms\Cms\Section\Enums\SectionType;
 use Illuminate\Support\Collection;
 use Throwable;
 use yii\console\Exception;
@@ -96,7 +97,7 @@ class PostType extends BaseConfigurableImporter
         $element->sectionId = $this->section()->id;
         $element->setTypeId($this->entryType()->id);
 
-        if ($this->section()->type === Section::TYPE_STRUCTURE && $data['parent']) {
+        if ($this->isStructure() && $data['parent']) {
             $element->setParentId($this->command->import($this->slug(), $data['parent']));
         }
 
@@ -299,6 +300,12 @@ class PostType extends BaseConfigurableImporter
         return $this->entryType = $entryType;
     }
 
+    private function isStructure(): bool
+    {
+        $type = $this->section()->type;
+        return ($type instanceof \BackedEnum ? $type->value : $type) === Section::TYPE_STRUCTURE;
+    }
+
     public function section(): Section
     {
         if (isset($this->section)) {
@@ -314,7 +321,9 @@ class PostType extends BaseConfigurableImporter
         $section = new Section();
         $section->name = $this->label();
         $section->handle = $sectionHandle;
-        $section->type = $this->hierarchical() ? Section::TYPE_STRUCTURE : Section::TYPE_CHANNEL;
+        $type = $this->hierarchical() ? Section::TYPE_STRUCTURE : Section::TYPE_CHANNEL;
+        // Craft 6 types this as an enum
+        $section->type = enum_exists(SectionType::class) ? SectionType::from($type) : $type;
         $section->enableVersioning = $this->supports('revisions');
         $section->setEntryTypes([$this->entryType()]);
         $section->setSiteSettings([

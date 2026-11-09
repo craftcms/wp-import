@@ -9,6 +9,7 @@ Import all your WordPress content, media, and users into Craft CMS with a single
 - [WordPress Feature Support](#wordpress-feature-support)
 - [Requirements](#requirements)
 - [Setup](#setup)
+- [Craft 6](#craft-6)
 - [Usage](#usage)
 - [Supported Block Types](#supported-block-types)
 - [Supported ACF Fields](#supported-acf-fields)
@@ -34,6 +35,8 @@ ACF Fields | ✅ (see [Supported ACF Fields](#supported-acf-fields))
 ## Requirements
 
 Craft 5.5+ is required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) plugin. [Verbb Comments](https://plugins.craftcms.com/comments) is also required if you wish to import user comments.
+
+Craft 6 is supported as well, with the `craftcms/yii2-adapter` package. (See [Craft 6](#craft-6).)
 
 ## Setup
 
@@ -82,6 +85,26 @@ Then run this CLI command:
 > yiisoft/yii2-composer contains a Composer plugin which is currently not in your allow-plugins config. See https://getcomposer.org/allow-plugins
 > Do you trust "yiisoft/yii2-composer" to execute code and wish to enable it now? (writes "allow-plugins" to composer.json)
 > ```
+
+## Craft 6
+
+On Craft 6, wp-import runs through the Yii 2 adapter, and creates CKEditor 6 fields. Before running the import:
+
+1. Install the adapter, if your project doesn’t have it yet:
+
+   ```sh
+   composer require craftcms/yii2-adapter
+   ```
+
+2. Install CKEditor 6.
+3. Enable categories and tags, as WordPress categories and tags are imported as Craft categories and tags:
+
+   ```sh
+   php craft craft:add-categories-support
+   php craft craft:add-tags-support
+   ```
+
+Comments can’t be imported on Craft 6 yet, as there’s no Craft 6 release of Verbb Comments.
 
 ## Usage
 
