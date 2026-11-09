@@ -25,7 +25,7 @@
   "prefer-stable": true,
   "require": {
     "php": "^8.2",
-    "craftcms/cms": "^5.5.0-alpha|^6.0.0-alpha.1",
+    "craftcms/cms": "^5.5.0-alpha|^6.0.0-beta.1",
     "craftcms/url-validator": "^1.2",
     "symfony/css-selector": "^6.0|^7.0|^8.0",
     "symfony/dom-crawler": "^6.0|^7.0|^8.0"
