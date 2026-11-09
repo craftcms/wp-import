@@ -22,18 +22,20 @@ Feature | Supported
 Posts | ✅
 Pages | ✅
 Media | ✅
-Categories | ✅
-Tags | ✅
+Categories | ✅ (as entries)
+Tags | ✅ (as entries)
 Users | ✅
-Comments | ✅ (requires [Verbb Comments](https://plugins.craftcms.com/comments))
+Comments | ❌ (not yet available on Craft 6)
 Gutenberg | ✅ (see [Supported Block Types](#supported-block-types))
 Custom post types | ✅
-Custom taxonomies | ✅
+Custom taxonomies | ✅ (as entries)
 ACF Fields | ✅ (see [Supported ACF Fields](#supported-acf-fields))
 
 ## Requirements
 
-Craft 5.5+ is required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) plugin. [Verbb Comments](https://plugins.craftcms.com/comments) is also required if you wish to import user comments.
+Craft 6 and PHP 8.5 are required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) plugin.
+
+wp-import 3.x runs natively on Craft 6. For Craft 5, use wp-import 2.x. See [UPGRADE.md](UPGRADE.md) for what changed.
 
 ## Setup
 
@@ -67,7 +69,7 @@ Field groups registered via PHP can opt into being included in the REST API by p
 
 ### 5. Install wp-import
 
-First ensure you’re running Craft CMS 5.5.0 or later.
+First ensure you’re running Craft CMS 6, with the CKEditor plugin installed.
 
 Then run this CLI command:
 
@@ -75,13 +77,7 @@ Then run this CLI command:
 > ddev composer require craftcms/wp-import --dev
 ```
 
-> [!NOTE]
-> If you get the following prompt, make sure to answer `y`:
->
-> ```sh
-> yiisoft/yii2-composer contains a Composer plugin which is currently not in your allow-plugins config. See https://getcomposer.org/allow-plugins
-> Do you trust "yiisoft/yii2-composer" to execute code and wish to enable it now? (writes "allow-plugins" to composer.json)
-> ```
+Laravel’s package discovery registers the `wp-import` command.
 
 ## Usage
 
@@ -113,7 +109,8 @@ The command will then begin importing your content, creating content model compo
 
 - A “Posts” section for your posts.
 - A “Pages” section for your pages.
-- An “Uploads” filesystem and volume for your media.
+- A “WordPress Content” volume for your media, on the `public` filesystem disk (or the disk passed via `--disk`).
+- Structure or Channel sections for your categories, tags, and custom taxonomies, with Entries fields that relate them to posts.
 - A “Post Content” CKEditor field with some nested entry types for storing non-HTML block data.
 
 You can import any new content by running the command again later on. Or import just certain posts (etc.) using the `--item-id` option:
@@ -242,19 +239,34 @@ If your WordPress site contains unsupported content types, Gutenberg block types
 
 Importers represent the high level types of data that will be imported (posts, pages, users, media, etc.). They identify where their data lives within the WordPress REST API, and populate new Craft elements with incoming data.
 
-Custom importers can be placed within `config/wp-import/importers/`. They must extend `craft\wpimport\BaseImporter`. See [src/importers/](./src/importers) for built-in examples.
+Custom importers can be placed within `config/craft/wp-import/importers/`. They must extend `CraftCms\WpImport\Importers\BaseImporter`. See [src/Importers/](./src/Importers) for built-in examples.
 
 ### Block Transformers
 
 Block transformers are responsible for converting Gutenberg block data into HTML or a nested entry for the “Post Content” CKEditor field.
 
-Custom block transformers can be placed within `config/wp-import/blocktransformers/`. They must extend `craft\wpimport\BaseBlockTransformer`. See [src/blocktransformers/](./src/blocktransformers) for built-in examples.
+Custom block transformers can be placed within `config/craft/wp-import/blocktransformers/`. They must extend `CraftCms\WpImport\BlockTransformers\BaseBlockTransformer`. See [src/BlockTransformers/](./src/BlockTransformers) for built-in examples.
 
 ### ACF Adapters
 
 ACF adapters create custom fields that map to ACF fields, and convert incoming field values into a format that the Craft field can understand.
 
-Custom ACF adapters can be placed within `config/wp-import/acfadapters/`. They must extend `craft\wpimport\BaseAcfAdapter`. See [src/acfadapters/](./src/acfadapters) for built-in examples.
+Custom ACF adapters can be placed within `config/craft/wp-import/acfadapters/`. They must extend `CraftCms\WpImport\AcfAdapters\BaseAcfAdapter`. See [src/AcfAdapters/](./src/AcfAdapters) for built-in examples.
+
+### Registering Components With Events
+
+Components that live elsewhere in your project can be registered from a service provider instead:
+
+```php
+use CraftCms\WpImport\Events\BlockTransformerTypesResolving;
+use Illuminate\Support\Facades\Event;
+
+Event::listen(function (BlockTransformerTypesResolving $event): void {
+    $event->types->push(MyBlockTransformer::class);
+});
+```
+
+`ImporterTypesResolving` and `AcfAdapterTypesResolving` work the same way for importers and ACF adapters.
 
 ## Getting Help
 

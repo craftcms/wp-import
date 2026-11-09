@@ -1,0 +1,75 @@
+name: ci
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ci:
+    name: ci
+    uses: craftcms/.github/.github/workflows/ci.yml@v3
+    with:
+      craft_version: '6'
+      jobs: '["phpstan", "prettier"]'
+      notify_slack: true
+      slack_subteam: <!subteam^SGFL9NKNZ>
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+      slack_webhook_url: ${{ secrets.SLACK_PLUGIN_WEBHOOK_URL }}
+  tests:
+    name: Tests (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - db: sqlite
+          - db: mysql
+            port: 3306
+          - db: pgsql
+            port: 5432
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: wpimport_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=5s --health-retries=10
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: root
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: wpimport_test
+        ports:
+          - 5432:5432
+        options: --health-cmd=pg_isready --health-interval=5s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: bcmath, intl, pdo_sqlite, pdo_mysql, pdo_pgsql, zip
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Check code style
+        if: matrix.db == 'sqlite'
+        run: composer check-cs
+      - name: Run tests
+        run: composer test
+        env:
+          DB_CONNECTION: ${{ matrix.db }}
+          DB_HOST: ${{ matrix.db != 'sqlite' && '127.0.0.1' || '' }}
+          DB_PORT: ${{ matrix.port }}
+          DB_DATABASE: ${{ matrix.db != 'sqlite' && 'wpimport_test' || ':memory:' }}
+          DB_USERNAME: root
+          DB_PASSWORD: ''

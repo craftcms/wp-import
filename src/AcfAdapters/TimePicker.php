@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @link https://craftcms.com/
+ *
+ * @copyright Copyright (c) Pixel & Tonic, Inc.
+ * @license MIT
+ */
+
+namespace CraftCms\WpImport\AcfAdapters;
+
+use CraftCms\Cms\Field\Contracts\FieldInterface;
+use CraftCms\Cms\Field\Time;
+
+/**
+ * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
+ */
+class TimePicker extends BaseAcfAdapter
+{
+    public static function type(): string
+    {
+        return 'time_picker';
+    }
+
+    public function create(array $data): FieldInterface
+    {
+        return new Time;
+    }
+}
