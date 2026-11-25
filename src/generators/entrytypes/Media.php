@@ -11,10 +11,7 @@ use Craft;
 use craft\enums\Color;
 use craft\fieldlayoutelements\CustomField;
 use craft\models\EntryType;
-use craft\models\FieldLayout;
-use craft\models\FieldLayoutTab;
 use craft\wpimport\Command;
-use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Media as MediaField;
 use craft\wpimport\generators\fields\RichCaption;
 

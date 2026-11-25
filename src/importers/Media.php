@@ -21,7 +21,6 @@ use craft\wpimport\BaseImporter;
 use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Description;
 use craft\wpimport\generators\fields\WpTitle;
-use craft\wpimport\generators\filesystems\Uploads;
 use craft\wpimport\generators\volumes\WpContent;
 use Throwable;
 use yii\console\Exception;

@@ -35,7 +35,6 @@ use craft\wpimport\errors\ReportableExceptionInterface;
 use craft\wpimport\errors\UnknownAcfFieldTypeException;
 use craft\wpimport\errors\UnknownBlockTypeException;
 use craft\wpimport\generators\entrytypes\Media as MediaEntryType;
-use craft\wpimport\generators\fields\Caption;
 use craft\wpimport\generators\fields\Media as MediaField;
 use craft\wpimport\generators\fields\PostContent;
 use craft\wpimport\generators\fields\RichCaption;
