@@ -14,6 +14,7 @@
 - Replaced the `craft\wpimport\Command::EVENT_REGISTER_*` events with `CraftCms\WpImport\Events\ImporterTypesResolving`, `BlockTransformerTypesResolving`, and `AcfAdapterTypesResolving`.
 - Added `CraftCms\WpImport\Importers\BaseImporter::existingElementQuery()`.
 - Fixed a bug where running the command with `--update` could fail with a “Handle has already been taken” error for ACF fields.
+- Fixed an error that occurred when importing Details blocks.
 
 ## 2026-10-11
 
