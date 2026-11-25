@@ -59,6 +59,7 @@ abstract class BaseAcfAdapter extends BaseObject
      */
     protected function restrictFileKinds(Assets $field, array $kinds): void
     {
+        // @phpstan-ignore function.alreadyNarrowedType (always true on Craft 5, but not on Craft 6)
         if (property_exists($field, 'restrictFiles')) {
             $field->restrictFiles = true;
             $field->allowedKinds = $kinds;
@@ -67,6 +68,7 @@ abstract class BaseAcfAdapter extends BaseObject
 
         // Craft 6 restricts file kinds via the field’s selection condition
         $condition = $field->getSelectionCondition();
+        // @phpstan-ignore method.nonObject, class.notFound (Craft 6 only)
         $condition->getConditionRules()->addRule(new FileTypeConditionRule(['values' => $kinds]));
         $field->setSelectionCondition($condition);
     }

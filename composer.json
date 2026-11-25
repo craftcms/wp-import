@@ -31,18 +31,16 @@
     "symfony/dom-crawler": "^6.0|^7.0|^8.0"
   },
   "require-dev": {
-    "craftcms/ckeditor": "^4.2",
+    "craftcms/ckeditor": "^5.10",
     "craftcms/ecs": "dev-main",
     "craftcms/phpstan": "dev-main",
     "pestphp/pest": "^1.22",
+    "phpstan/phpstan": "^2.1",
     "verbb/comments": "^3.0"
   },
   "suggest": {
     "craftcms/yii2-adapter": "Required to use wp-import with Craft CMS 6."
   },
-  "repositories": [
-    {"type": "path", "url":  "../cms"}
-  ],
   "autoload": {
     "psr-4": {
       "craft\\wpimport\\": "src/"

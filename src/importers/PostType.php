@@ -303,6 +303,7 @@ class PostType extends BaseConfigurableImporter
     private function isStructure(): bool
     {
         $type = $this->section()->type;
+        // @phpstan-ignore instanceof.alwaysFalse (Craft 6 uses an enum)
         return ($type instanceof \BackedEnum ? $type->value : $type) === Section::TYPE_STRUCTURE;
     }
 

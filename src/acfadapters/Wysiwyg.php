@@ -36,6 +36,7 @@ class Wysiwyg extends BaseAcfAdapter
         } else {
             $toolbarName = $this->toolbarName($data['toolbar']);
             if ($toolbarName) {
+                // @phpstan-ignore property.notFound (CKEditor 5+ field property)
                 $field->toolbar = $this->toolbar($toolbarName);
             }
         }

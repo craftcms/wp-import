@@ -33,6 +33,7 @@ abstract class BaseCkeConfigGenerator
         if (self::usesConfigs()) {
             $field->ckeConfig = static::get()->uid;
         } else {
+            // @phpstan-ignore property.notFound (CKEditor 5+ field property)
             $field->toolbar = static::toolbar();
         }
         return $field;
@@ -47,6 +48,7 @@ abstract class BaseCkeConfigGenerator
     {
         // CKEditor 6 (for Craft 6) has a new namespace
         $class = class_exists(NativeField::class) ? NativeField::class : Field::class;
+        // @phpstan-ignore class.notFound (CKEditor 6, Craft 6 only)
         return new $class($config);
     }
 

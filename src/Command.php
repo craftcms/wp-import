@@ -1136,6 +1136,7 @@ MD, Craft::$app->formatter->asInteger($totalWpUsers)));
     {
         if (class_exists(Edition::class)) {
             // Craft 6 reads the edition from the request context
+            // @phpstan-ignore class.notFound (Craft 6 only)
             Context::addHidden(Edition::class, $edition);
         } else {
             Craft::$app->edition = $edition;
