@@ -1,6 +1,6 @@
-# Upgrading to wp-import 3.0 (Craft 6)
+# Upgrading to wp-import 2.0 (Craft 6)
 
-wp-import 3.0 runs natively on Craft 6. This guide lists what changed from 2.x.
+wp-import 2.0 runs natively on Craft 6. This guide lists what changed from 1.x.
 
 ## Requirements
 
@@ -12,10 +12,10 @@ wp-import 3.0 runs natively on Craft 6. This guide lists what changed from 2.x.
 ## Upgrade steps
 
 1. Upgrade your project to Craft 6 first.
-2. Update the package: `composer require craftcms/wp-import:^3.0 --dev`.
+2. Update the package: `composer require craftcms/wp-import:^2.0 --dev`.
 3. If you wrote custom importers, block transformers or ACF adapters, move them from `config/wp-import/` to `config/craft/wp-import/`, and update them as described below.
 
-wp-import is now a Laravel package. Composer’s package discovery registers its command, so the `yiisoft/yii2-composer` plugin prompt from 2.x no longer appears.
+wp-import is now a Laravel package. Composer’s package discovery registers its command, so the `yiisoft/yii2-composer` plugin prompt from 1.x no longer appears.
 
 ## Breaking changes
 
@@ -30,11 +30,11 @@ wp-import is now a Laravel package. Composer’s package discovery registers its
 | `--type=post,page` | `--type=post,page` or `--type=post --type=page` |
 | (none) | `--disk=<name>`: the filesystem disk for the “WordPress Content” volume (defaults to `public`) |
 
-The command’s output uses Laravel Prompts, so it looks different from 2.x.
+The command’s output uses Laravel Prompts, so it looks different from 1.x.
 
 ### Content model
 
-- **Categories, tags and custom taxonomies are imported as entries.** Craft 6 has no categories or tags without the Yii 2 adapter. Hierarchical taxonomies get a Structure section and flat ones a Channel section, and tags go to a “Tags” channel. Posts relate to them with Entries fields, which keep the handles 2.x used (`categories`, `tags`, …).
+- **Categories, tags and custom taxonomies are imported as entries.** Craft 6 has no categories or tags without the Yii 2 adapter. Hierarchical taxonomies get a Structure section and flat ones a Channel section, and tags go to a “Tags” channel. Posts relate to them with Entries fields, which keep the handles 1.x used (`categories`, `tags`, …).
 - **Comments aren’t imported.** Verbb Comments isn’t available natively on Craft 6 yet. WordPress comments are skipped.
 - **No filesystem is created.** Craft 6 volumes use Laravel filesystem disks. The “WordPress Content” volume uses the disk passed with `--disk` (default `public`), with a `wp-content` subpath.
 - **No CKEditor configs are created.** CKEditor for Craft 6 stores toolbars on each field, so the Post Content, Pull Quote and Rich Caption fields (and fields made for ACF WYSIWYG fields) set their own toolbars.

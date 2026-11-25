@@ -35,7 +35,7 @@ ACF Fields | ✅ (see [Supported ACF Fields](#supported-acf-fields))
 
 Craft 6 and PHP 8.5 are required, as well as the [CKEditor](https://plugins.craftcms.com/ckeditor) plugin.
 
-wp-import 3.x runs natively on Craft 6. For Craft 5, use wp-import 2.x. See [UPGRADE.md](UPGRADE.md) for what changed.
+wp-import 2.x runs natively on Craft 6. For Craft 5, use wp-import 1.x. See [UPGRADE.md](UPGRADE.md) for what changed.
 
 ## Setup
 
