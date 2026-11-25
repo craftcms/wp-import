@@ -11,6 +11,7 @@ use craft\elements\Entry;
 use craft\wpimport\BaseBlockTransformer;
 use craft\wpimport\generators\entrytypes\Details as DetailsEntryType;
 use craft\wpimport\generators\fields\Summary;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
@@ -26,7 +27,10 @@ class Details extends BaseBlockTransformer
     {
         return $this->command->createNestedEntry($entry, function(Entry $nestedEntry) use ($data) {
             $nestedEntry->setTypeId(DetailsEntryType::get()->id);
-            $nestedEntry->setFieldValue(Summary::get()->handle, $data['attrs']['summary']);
+            $node = (new Crawler($data['innerHTML']))->filter('summary');
+            if ($node->count()) {
+                $nestedEntry->setFieldValue(Summary::get()->handle, $node->html());
+            }
 
             // save it so we get an ID, before parsing the nested blocks
             $this->command->saveNestedEntry($nestedEntry);
