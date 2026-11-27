@@ -1,0 +1,4 @@
+{
+  "**/*.php": ["./vendor/bin/pint", "./vendor/bin/phpstan analyse"],
+  "*": "prettier --ignore-unknown --write"
+}

@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @link https://craftcms.com/
+ *
+ * @copyright Copyright (c) Pixel & Tonic, Inc.
+ * @license MIT
+ */
+
+namespace CraftCms\WpImport\Exceptions;
+
+use RuntimeException;
+
+/**
+ * @author Pixel & Tonic, Inc. <support@pixelandtonic.com>
+ */
+class InvalidColor extends RuntimeException implements ReportableExceptionInterface
+{
+    public function __construct(
+        public readonly string $color,
+    ) {
+        parent::__construct($this->getName());
+    }
+
+    public function getName(): string
+    {
+        return "Invalid color: $this->color";
+    }
+
+    public function getReport(): string
+    {
+        return '';
+    }
+}
