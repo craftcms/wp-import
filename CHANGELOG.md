@@ -1,6 +1,6 @@
 # Release Notes for WP Import
 
-## Unreleased
+## 1.0.0 - 2026-11-27
 
 - Added Craft 6 compatibility, when the `craftcms/yii2-adapter` package is installed. Fields are created for CKEditor 6. ([#25](https://github.com/craftcms/wp-import/pull/25))
 - Added support for CKEditor 5 on Craft 5. ([#25](https://github.com/craftcms/wp-import/pull/25))
