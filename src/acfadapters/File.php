@@ -48,18 +48,19 @@ class File extends BaseAcfAdapter
                 }
             }
 
-            $field->restrictFiles = true;
-            $field->allowedKinds = [];
+            $allowedKinds = [];
             $fileKinds = AssetsHelper::getFileKinds();
 
             foreach ($allowedExtensions as $extension) {
                 foreach ($fileKinds as $kind => $kindInfo) {
                     if (in_array($extension, $kindInfo['extensions'])) {
-                        $field->allowedKinds[] = $kind;
+                        $allowedKinds[] = $kind;
                         break;
                     }
                 }
             }
+
+            $this->restrictFileKinds($field, array_values(array_unique($allowedKinds)));
         }
 
         return $field;

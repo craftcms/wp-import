@@ -18,7 +18,10 @@ use yii\console\Exception;
  */
 abstract class BaseFieldGenerator
 {
-    public static function get(): FieldInterface
+    /**
+     * @return FieldInterface
+     */
+    public static function get()
     {
         $field = Craft::$app->fields->getFieldByUid(static::uid());
 
@@ -49,6 +52,8 @@ abstract class BaseFieldGenerator
 
     /**
      * Creates and configures the field (but doesn’t save it).
+     *
+     * @return FieldInterface
      */
-    abstract protected static function create(): FieldInterface;
+    abstract protected static function create();
 }

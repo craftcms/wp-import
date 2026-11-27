@@ -19,9 +19,14 @@ class Simple extends BaseCkeConfigGenerator
         return '040109cb-42b8-4100-a6f4-c1bd47d55c99';
     }
 
+    protected static function toolbar(): array
+    {
+        return ['bold', 'italic', 'link'];
+    }
+
     protected static function populate(CkeConfig $config): void
     {
         $config->name = 'Pull Quote';
-        $config->toolbar = ['bold', 'italic', 'link'];
+        $config->toolbar = static::toolbar();
     }
 }

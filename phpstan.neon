@@ -5,3 +5,10 @@ parameters:
     level: 5
     paths:
         - src
+    # PHPStan runs against CKEditor 5, so code that only runs on CKEditor 4 would be flagged
+    ignoreErrors:
+        -
+            message: '#craft\\ckeditor\\CkeConfig|getCkeConfigs\(\)|FieldInterface::\$ckeConfig#'
+            paths:
+                - src/acfadapters/Wysiwyg.php
+                - src/generators/ckeconfigs/*

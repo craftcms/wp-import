@@ -8,7 +8,6 @@
 namespace craft\wpimport\generators\fields;
 
 use craft\base\FieldInterface;
-use craft\ckeditor\Field;
 use craft\wpimport\generators\ckeconfigs\Simple;
 
 /**
@@ -21,12 +20,14 @@ class RichCaption extends BaseFieldGenerator
         return '22328587-6c0d-499f-bb07-eb7bd7e68bbf';
     }
 
-    protected static function create(): FieldInterface
+    /**
+     * @return FieldInterface
+     */
+    protected static function create()
     {
-        $field = new Field();
+        $field = Simple::createField();
         $field->name = 'Rich Caption';
         $field->handle = 'richCaption';
-        $field->ckeConfig = Simple::get()->uid;
         $field->searchable = true;
         return $field;
     }

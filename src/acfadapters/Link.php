@@ -25,10 +25,12 @@ class Link extends BaseAcfAdapter
 
     public function create(array $data): FieldInterface
     {
-        $field = new LinkField();
+        $field = new LinkField([
+            // set via the config, as Craft 6 only maps it to `advancedFields` there
+            'showTargetField' => true,
+        ]);
         $field->types = [Url::id(), Entry::id()];
         $field->showLabelField = true;
-        $field->showTargetField = true;
         return $field;
     }
 

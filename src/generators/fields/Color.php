@@ -44,6 +44,7 @@ class Color extends BaseFieldGenerator
                 }
             }
         }
+        // @phpstan-ignore property.notFound (set through setPresets(), which also works on Craft 5.5)
         $field->presets = array_keys($presets);
 
         return $field;
