@@ -1,6 +1,6 @@
 # Release Notes for WP Import
 
-## Unreleased
+## 2.0.0 - 2026-11-27
 
 - WP Import now requires Craft CMS 6.0 or later and PHP 8.5 or later, and runs natively on Craft 6 without the `craftcms/yii2-adapter` package. See [UPGRADE.md](UPGRADE.md).
 - WordPress categories, tags, and custom taxonomies are now imported as entries, and related to posts with Entries fields.
